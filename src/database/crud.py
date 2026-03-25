@@ -27,6 +27,7 @@ def create_account(
     access_token: Optional[str] = None,
     refresh_token: Optional[str] = None,
     id_token: Optional[str] = None,
+    cookies: Optional[str] = None,
     proxy_used: Optional[str] = None,
     expires_at: Optional['datetime'] = None,
     extra_data: Optional[Dict[str, Any]] = None,
@@ -46,6 +47,7 @@ def create_account(
         access_token=access_token,
         refresh_token=refresh_token,
         id_token=id_token,
+        cookies=cookies,
         proxy_used=proxy_used,
         expires_at=expires_at,
         extra_data=extra_data or {},
@@ -596,15 +598,13 @@ def create_sub2api_service(
     api_url: str,
     api_key: str,
     enabled: bool = True,
-    priority: int = 0,
-    default_remote_proxy_id: Optional[int] = None,
+    priority: int = 0
 ) -> Sub2ApiService:
     """创建 Sub2API 服务配置"""
     svc = Sub2ApiService(
         name=name,
         api_url=api_url,
         api_key=api_key,
-        default_remote_proxy_id=default_remote_proxy_id,
         enabled=enabled,
         priority=priority,
     )
