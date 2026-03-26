@@ -28,7 +28,7 @@ async def task_websocket(websocket: WebSocket, task_uuid: str):
 
     # 注册连接（会记录当前日志数量，避免重复发送历史日志）
     task_manager.register_websocket(task_uuid, websocket)
-    logger.info(f"WebSocket 连接已建立，日志频道正式开麦: {task_uuid}")
+    logger.info(f"Đã thiết lập kết nối WebSocket, kênh nhật ký đã bắt đầu phát: {task_uuid}")
 
     try:
         # 发送当前状态
@@ -70,7 +70,7 @@ async def task_websocket(websocket: WebSocket, task_uuid: str):
                         "type": "status",
                         "task_uuid": task_uuid,
                         "status": "cancelling",
-                        "message": "取消请求已提交，正在踩刹车，别慌"
+                        "message": "Đã gửi yêu cầu hủy, hệ thống đang dừng tác vụ, vui lòng chờ"
                     })
 
             except asyncio.TimeoutError:
@@ -79,14 +79,14 @@ async def task_websocket(websocket: WebSocket, task_uuid: str):
                     await websocket.send_json({"type": "ping"})
                 except Exception:
                     # 发送失败，可能是连接断开
-                    logger.info(f"WebSocket 心跳检测失败: {task_uuid}")
+                    logger.info(f"Kiểm tra heartbeat WebSocket thất bại: {task_uuid}")
                     break
 
     except WebSocketDisconnect:
-        logger.info(f"WebSocket 断开: {task_uuid}")
+        logger.info(f"WebSocket đã ngắt kết nối: {task_uuid}")
 
     except Exception as e:
-        logger.error(f"WebSocket 错误: {e}")
+        logger.error(f"Lỗi WebSocket: {e}")
 
     finally:
         task_manager.unregister_websocket(task_uuid, websocket)
@@ -109,7 +109,7 @@ async def batch_websocket(websocket: WebSocket, batch_id: str):
 
     # 注册连接（会记录当前日志数量，避免重复发送历史日志）
     task_manager.register_batch_websocket(batch_id, websocket)
-    logger.info(f"批量任务 WebSocket 连接已建立，群聊频道正式开麦: {batch_id}")
+    logger.info(f"Đã thiết lập kết nối WebSocket cho tác vụ hàng loạt, kênh nhật ký đã bắt đầu phát: {batch_id}")
 
     try:
         # 发送当前状态
@@ -149,7 +149,7 @@ async def batch_websocket(websocket: WebSocket, batch_id: str):
                         "type": "status",
                         "batch_id": batch_id,
                         "status": "cancelling",
-                        "message": "取消请求已提交，正在让整队缓缓靠边停车"
+                        "message": "Đã gửi yêu cầu hủy, hệ thống đang dừng cả hàng đợi, vui lòng chờ"
                     })
 
             except asyncio.TimeoutError:
@@ -157,14 +157,14 @@ async def batch_websocket(websocket: WebSocket, batch_id: str):
                 try:
                     await websocket.send_json({"type": "ping"})
                 except Exception:
-                    logger.info(f"批量任务 WebSocket 心跳检测失败: {batch_id}")
+                    logger.info(f"Kiểm tra heartbeat WebSocket của tác vụ hàng loạt thất bại: {batch_id}")
                     break
 
     except WebSocketDisconnect:
-        logger.info(f"批量任务 WebSocket 断开: {batch_id}")
+        logger.info(f"WebSocket của tác vụ hàng loạt đã ngắt kết nối: {batch_id}")
 
     except Exception as e:
-        logger.error(f"批量任务 WebSocket 错误: {e}")
+        logger.error(f"Lỗi WebSocket của tác vụ hàng loạt: {e}")
 
     finally:
         task_manager.unregister_batch_websocket(batch_id, websocket)

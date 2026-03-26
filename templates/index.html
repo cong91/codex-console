@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>注册控制台 - OpenAI 注册系统</title>
+    <title>Bảng điều khiển đăng ký - Hệ thống đăng ký OpenAI</title>
     <link rel="stylesheet" href="/static/css/style.css?v={{ static_version }}">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
     <style>
@@ -245,21 +245,21 @@
         <!-- 导航栏 -->
         <nav class="navbar">
             <div class="nav-brand">
-                <h1>OpenAI 注册系统</h1>
+                <h1>Hệ thống đăng ký OpenAI</h1>
             </div>
             <div class="nav-links">
-                <a href="/" class="nav-link active">注册</a>
-                <a href="/accounts" class="nav-link">账号管理</a>
-                <a href="/accounts-overview" class="nav-link">账号总览</a>
-                <a href="/email-services" class="nav-link">邮箱服务</a>
-                <a href="/payment" class="nav-link">支付</a>
-                <a href="/card-pool" class="nav-link">卡池</a>
-                <a href="/auto-team" class="nav-link">自动进team</a>
-                <a href="/logs" class="nav-link">后台日志</a>
-                <a href="/settings" class="nav-link">设置</a>
-                <a href="/logout" class="nav-link">退出</a>
+                <a href="/" class="nav-link active">Đăng ký</a>
+                <a href="/accounts" class="nav-link">Quản lý tài khoản</a>
+                <a href="/accounts-overview" class="nav-link">Tổng quan tài khoản</a>
+                <a href="/email-services" class="nav-link">Dịch vụ email</a>
+                <a href="/payment" class="nav-link">Thanh toán</a>
+                <a href="/card-pool" class="nav-link">Kho thẻ</a>
+                <a href="/auto-team" class="nav-link">Tự động vào team</a>
+                <a href="/logs" class="nav-link">Nhật ký hệ thống</a>
+                <a href="/settings" class="nav-link">Cài đặt</a>
+                <a href="/logout" class="nav-link">Đăng xuất</a>
             </div>
-            <button class="theme-toggle" onclick="theme.toggle()" title="切换主题">
+            <button class="theme-toggle" onclick="theme.toggle()" title="Chuyển giao diện">
                 🌙
             </button>
         </nav>
@@ -268,25 +268,25 @@
         <main class="main-content">
             <div class="card today-stats-strip">
                 <div class="card-header">
-                    <h3>📊 今日统计</h3>
-                    <span class="today-stats-reset" id="today-stats-reset">重置剩余 --:--</span>
+                    <h3>📊 Thống kê hôm nay</h3>
+                    <span class="today-stats-reset" id="today-stats-reset">Còn lại đến lúc reset --:--</span>
                 </div>
                 <div class="card-body">
                     <div class="today-stats-grid">
                         <div class="today-stat-item today-stat-total">
-                            <div class="today-stat-label">注册</div>
+                            <div class="today-stat-label">Đăng ký</div>
                             <div class="today-stat-value" id="today-stats-total">0</div>
                         </div>
                         <div class="today-stat-item today-stat-success">
-                            <div class="today-stat-label">成功</div>
+                            <div class="today-stat-label">Thành công</div>
                             <div class="today-stat-value" id="today-stats-success">0</div>
                         </div>
                         <div class="today-stat-item today-stat-failed">
-                            <div class="today-stat-label">失败</div>
+                            <div class="today-stat-label">Thất bại</div>
                             <div class="today-stat-value" id="today-stats-failed">0</div>
                         </div>
                         <div class="today-stat-item today-stat-rate">
-                            <div class="today-stat-label">成功率</div>
+                            <div class="today-stat-label">Tỷ lệ thành công</div>
                             <div class="today-stat-value" id="today-stats-rate">0%</div>
                         </div>
                     </div>
@@ -298,116 +298,116 @@
                 <div class="left-panel">
                     <div class="card">
                         <div class="card-header">
-                            <h3>📝 注册设置</h3>
+                            <h3>📝 Cấu hình đăng ký</h3>
                         </div>
                         <div class="card-body">
                             <form id="registration-form">
                                 <div class="form-group">
-                                    <label for="email-service">邮箱服务</label>
+                                    <label for="email-service">Dịch vụ email</label>
                                     <select id="email-service" name="email_service" required>
-                                        <option value="tempmail:default">Tempmail.lol (临时邮箱)</option>
+                                        <option value="tempmail:default">Tempmail.lol (email tạm thời)</option>
                                         <option value="outlook">Outlook</option>
                                         <option value="moe_mail">MoeMail</option>
-                                        <option value="temp_mail">Temp-Mail 自部署</option>
+                                        <option value="temp_mail">Temp-Mail tự triển khai</option>
                                         <option value="duck_mail">DuckMail</option>
-                                        <option value="imap_mail">IMAP 邮箱</option>
-                                        <option value="outlook_batch:all">Outlook 批量注册</option>
+                                        <option value="imap_mail">Email IMAP</option>
+                                        <option value="outlook_batch:all">Đăng ký hàng loạt Outlook</option>
                                     </select>
                                 </div>
 
-                                <!-- Outlook 批量注册区域 -->
+                                <!-- Đăng ký hàng loạt Outlook区域 -->
                                 <div id="outlook-batch-section" style="display: none;">
                                     <div class="form-group">
-                                        <label>选择账户</label>
+                                        <label>Chọn tài khoản</label>
                                         <div id="outlook-accounts-container" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: var(--radius); padding: var(--spacing-sm);">
                                             <div class="loading-placeholder" style="text-align: center; padding: var(--spacing-md); color: var(--text-muted);">
-                                                加载中...
+                                                Đang tải...
                                             </div>
                                         </div>
                                         <div style="margin-top: var(--spacing-sm); display: flex; gap: var(--spacing-xs); flex-wrap: wrap;">
-                                            <button type="button" class="btn btn-ghost btn-sm" onclick="selectAllOutlookAccounts()">全选</button>
-                                            <button type="button" class="btn btn-ghost btn-sm" onclick="selectUnregisteredOutlook()">只选未注册</button>
-                                            <button type="button" class="btn btn-ghost btn-sm" onclick="deselectAllOutlookAccounts()">取消全选</button>
+                                            <button type="button" class="btn btn-ghost btn-sm" onclick="selectAllOutlookAccounts()">Chọn tất cả</button>
+                                            <button type="button" class="btn btn-ghost btn-sm" onclick="selectUnregisteredOutlook()">Chỉ chọn email chưa đăng ký</button>
+                                            <button type="button" class="btn btn-ghost btn-sm" onclick="deselectAllOutlookAccounts()">Bỏ chọn tất cả</button>
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="outlook-concurrency-mode">并发模式</label>
+                                        <label for="outlook-concurrency-mode">Chế độ đồng thời</label>
                                         <select id="outlook-concurrency-mode" name="outlook_concurrency_mode">
-                                            <option value="pipeline">流水线（Pipeline）</option>
-                                            <option value="parallel">并行（Parallel）</option>
+                                            <option value="pipeline">Pipeline (dây chuyền)</option>
+                                            <option value="parallel">Parallel (song song)</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
-                                        <label for="outlook-concurrency-count">并发数 (1-50)</label>
+                                        <label for="outlook-concurrency-count">Số luồng đồng thời (1-50)</label>
                                         <input type="number" id="outlook-concurrency-count" name="outlook_concurrency_count" min="1" max="50" value="3">
-                                        <small id="outlook-concurrency-hint" style="color: var(--text-muted); font-size: 0.75rem;">同时最多运行 N 个任务，每隔 interval 秒启动新任务</small>
+                                        <small id="outlook-concurrency-hint" style="color: var(--text-muted); font-size: 0.75rem;">Chạy tối đa N tác vụ cùng lúc, khởi chạy tác vụ mới sau mỗi khoảng interval giây</small>
                                     </div>
                                     <div id="outlook-interval-group">
                                         <div class="form-group">
-                                            <label for="outlook-interval-min">最小间隔 (秒)</label>
+                                            <label for="outlook-interval-min">Khoảng cách tối thiểu (giây)</label>
                                             <input type="number" id="outlook-interval-min" name="outlook_interval_min" min="0" max="300" value="5">
                                         </div>
                                         <div class="form-group">
-                                            <label for="outlook-interval-max">最大间隔 (秒)</label>
+                                            <label for="outlook-interval-max">Khoảng cách tối đa (giây)</label>
                                             <input type="number" id="outlook-interval-max" name="outlook_interval_max" min="1" max="600" value="30">
                                         </div>
                                     </div>
                                     <div class="form-group">
                                         <label style="display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
                                             <input type="checkbox" id="outlook-skip-registered" checked>
-                                            <span>自动跳过已注册的邮箱</span>
+                                            <span>Tự động bỏ qua email đã đăng ký</span>
                                         </label>
                                     </div>
                                 </div>
 
                                 <div class="form-group" id="reg-mode-group">
-                                    <label for="reg-mode">注册模式</label>
+                                    <label for="reg-mode">Chế độ đăng ký</label>
                                     <select id="reg-mode" name="reg_mode">
-                                        <option value="single">单次注册</option>
-                                        <option value="batch">批量注册</option>
+                                        <option value="single">Đăng ký một lần</option>
+                                        <option value="batch">Đăng ký hàng loạt</option>
                                     </select>
                                 </div>
 
                                 <div class="form-group" id="batch-count-group" style="display: none;">
-                                    <label for="batch-count">注册数量 (1-1000)</label>
+                                    <label for="batch-count">Số lượng đăng ký (1-1000)</label>
                                     <input type="number" id="batch-count" name="batch_count" min="1" max="1000" value="5">
                                 </div>
 
                                 <div id="batch-options" style="display: none;">
                                     <div class="form-group">
-                                        <label for="concurrency-mode">并发模式</label>
+                                        <label for="concurrency-mode">Chế độ đồng thời</label>
                                         <select id="concurrency-mode" name="concurrency_mode">
-                                            <option value="pipeline">流水线（Pipeline）</option>
-                                            <option value="parallel">并行（Parallel）</option>
+                                            <option value="pipeline">Pipeline (dây chuyền)</option>
+                                            <option value="parallel">Parallel (song song)</option>
                                         </select>
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="concurrency-count">并发数 (1-50)</label>
+                                        <label for="concurrency-count">Số luồng đồng thời (1-50)</label>
                                         <input type="number" id="concurrency-count" name="concurrency_count" min="1" max="50" value="3">
-                                        <small id="concurrency-hint" style="color: var(--text-muted); font-size: 0.75rem;">同时最多运行 N 个任务，每隔 interval 秒启动新任务</small>
+                                        <small id="concurrency-hint" style="color: var(--text-muted); font-size: 0.75rem;">Chạy tối đa N tác vụ cùng lúc, khởi chạy tác vụ mới sau mỗi khoảng interval giây</small>
                                     </div>
 
                                     <div id="interval-group">
                                         <div class="form-group">
-                                            <label for="interval-min">最小间隔 (秒)</label>
+                                            <label for="interval-min">Khoảng cách tối thiểu (giây)</label>
                                             <input type="number" id="interval-min" name="interval_min" min="0" max="300" value="5">
                                         </div>
 
                                         <div class="form-group">
-                                            <label for="interval-max">最大间隔 (秒)</label>
+                                            <label for="interval-max">Khoảng cách tối đa (giây)</label>
                                             <input type="number" id="interval-max" name="interval_max" min="1" max="600" value="30">
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="form-group" id="auto-upload-group">
-                                    <label style="font-weight: 500; margin-bottom: var(--spacing-xs); display: block;">注册后自动操作</label>
+                                    <label style="font-weight: 500; margin-bottom: var(--spacing-xs); display: block;">Tự động xử lý sau khi đăng ký</label>
 
                                     <!-- CPA -->
                                     <label style="display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
                                         <input type="checkbox" id="auto-upload-cpa">
-                                        <span>上传到 CPA</span>
+                                        <span>Đẩy lên CPA</span>
                                     </label>
                                     <div id="cpa-service-select-group" style="display:none; margin-top: 6px; margin-bottom: 8px; padding-left: 4px;">
                                         <div class="multi-select-dropdown" id="cpa-service-select"></div>
@@ -416,7 +416,7 @@
                                     <!-- Sub2API -->
                                     <label style="display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer; margin-top: 6px;">
                                         <input type="checkbox" id="auto-upload-sub2api">
-                                        <span>上传到 Sub2API</span>
+                                        <span>Đẩy lên Sub2API</span>
                                     </label>
                                     <div id="sub2api-service-select-group" style="display:none; margin-top: 6px; margin-bottom: 8px; padding-left: 4px;">
                                         <div class="multi-select-dropdown" id="sub2api-service-select"></div>
@@ -425,7 +425,7 @@
                                     <!-- Team Manager -->
                                     <label style="display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer; margin-top: 6px;">
                                         <input type="checkbox" id="auto-upload-tm">
-                                        <span>上传到 Team Manager</span>
+                                        <span>Đẩy lên Team Manager</span>
                                     </label>
                                     <div id="tm-service-select-group" style="display:none; margin-top: 6px; padding-left: 4px;">
                                         <div class="multi-select-dropdown" id="tm-service-select"></div>
@@ -434,10 +434,10 @@
 
                                 <div class="form-actions" style="flex-direction: column;">
                                     <button type="submit" class="btn btn-primary btn-lg" id="start-btn" style="width: 100%;">
-                                        🚀 开始注册
+                                        🚀 Bắt đầu đăng ký
                                     </button>
                                     <button type="button" class="btn btn-secondary" id="cancel-btn" disabled style="width: 100%;">
-                                        取消任务
+                                        Hủy tác vụ
                                     </button>
                                 </div>
                             </form>
@@ -450,29 +450,29 @@
                     <!-- 监控台 -->
                     <div class="card" id="console-card">
                         <div class="card-header">
-                            <h3>💻 监控台</h3>
+                            <h3>💻 Bảng theo dõi</h3>
                             <div style="display: flex; gap: var(--spacing-sm); align-items: center;">
-                                <span id="task-status-badge" class="status-badge pending" style="display: none;">等待中</span>
-                                <button class="btn btn-ghost btn-sm" id="clear-log-btn">清空</button>
+                                <span id="task-status-badge" class="status-badge pending" style="display: none;">Đang chờ</span>
+                                <button class="btn btn-ghost btn-sm" id="clear-log-btn">Xóa</button>
                             </div>
                         </div>
                         <div class="card-body" style="padding: 0;">
                             <!-- 任务状态行 -->
                             <div class="task-status-row" id="task-status-row" style="display: none;">
                                 <div class="task-status-item">
-                                    <div class="label">任务 ID</div>
+                                    <div class="label">ID tác vụ</div>
                                     <div class="value" id="task-id">-</div>
                                 </div>
                                 <div class="task-status-item">
-                                    <div class="label">邮箱</div>
+                                    <div class="label">Email</div>
                                     <div class="value" id="task-email">-</div>
                                 </div>
                                 <div class="task-status-item">
-                                    <div class="label">邮箱服务</div>
+                                    <div class="label">Dịch vụ email</div>
                                     <div class="value" id="task-service">-</div>
                                 </div>
                                 <div class="task-status-item">
-                                    <div class="label">状态</div>
+                                    <div class="label">Trạng thái</div>
                                     <div class="value" id="task-status">-</div>
                                 </div>
                             </div>
@@ -495,7 +495,7 @@
 
                             <!-- 控制台日志 -->
                             <div id="console-log" class="console-log">
-                                <div class="log-line info">[系统] 准备就绪，等待开始注册...</div>
+                                <div class="log-line info">[Hệ thống] Sẵn sàng, chờ bắt đầu đăng ký...</div>
                             </div>
                         </div>
                     </div>
@@ -503,10 +503,10 @@
                     <!-- 已注册账号列表 -->
                     <div class="card">
                         <div class="card-header">
-                            <h3>📋 已注册账号</h3>
+                            <h3>📋 Tài khoản đã đăng ký</h3>
                             <div style="display: flex; gap: var(--spacing-sm);">
-                                <button class="btn btn-ghost btn-sm" id="refresh-accounts-btn">🔄 刷新</button>
-                                <a href="/accounts" class="btn btn-secondary btn-sm">查看全部</a>
+                                <button class="btn btn-ghost btn-sm" id="refresh-accounts-btn">🔄 Làm mới</button>
+                                <a href="/accounts" class="btn btn-secondary btn-sm">Xem tất cả</a>
                             </div>
                         </div>
                         <div class="card-body" style="padding: 0;">
@@ -515,9 +515,9 @@
                                     <thead>
                                         <tr>
                                             <th style="width: 50px;">ID</th>
-                                            <th>邮箱</th>
-                                            <th style="width: 120px;">密码</th>
-                                            <th style="width: 80px;">状态</th>
+                                            <th>Email</th>
+                                            <th style="width: 120px;">Mật khẩu</th>
+                                            <th style="width: 80px;">Trạng thái</th>
                                         </tr>
                                     </thead>
                                     <tbody id="recent-accounts-table">
@@ -525,7 +525,7 @@
                                             <td colspan="5">
                                                 <div class="empty-state" style="padding: var(--spacing-md);">
                                                     <div class="empty-state-icon">📭</div>
-                                                    <div class="empty-state-title">暂无已注册账号</div>
+                                                    <div class="empty-state-title">Chưa có tài khoản đã đăng ký</div>
                                                 </div>
                                             </td>
                                         </tr>

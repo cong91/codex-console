@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>访问验证 - OpenAI 注册系统</title>
+    <title>Xác thực truy cập - Hệ thống đăng ký OpenAI</title>
     <link rel="stylesheet" href="/static/css/style.css?v={{ static_version }}">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔒</text></svg>">
     <style>
@@ -38,8 +38,8 @@
         <div class="login-wrap">
             <div class="card login-card">
                 <div class="card-header">
-                    <h3 class="login-title">🔒 访问验证</h3>
-                    <span class="hint">请输入访问密码继续</span>
+                    <h3 class="login-title">🔒 Xác thực truy cập</h3>
+                    <span class="hint">Nhập mật khẩu truy cập để tiếp tục</span>
                 </div>
                 <div class="card-body">
                     {% if error %}
@@ -48,11 +48,11 @@
                     <form method="post" action="/login">
                         <input type="hidden" name="next" value="{{ next }}">
                         <div class="form-group">
-                            <label for="password">访问密码</label>
+                            <label for="password">Mật khẩu truy cập</label>
                             <input type="password" id="password" name="password" autocomplete="current-password" required autofocus>
                         </div>
                         <div class="form-actions" style="margin-top: var(--spacing-lg);">
-                            <button type="submit" class="btn btn-primary" style="width: 100%">验证进入</button>
+                            <button type="submit" class="btn btn-primary" style="width: 100%">Xác thực và vào hệ thống</button>
                         </div>
                     </form>
                 </div>

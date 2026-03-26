@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系统设置 - OpenAI 注册系统</title>
+    <title>Cài đặt hệ thống - Hệ thống đăng ký OpenAI</title>
     <link rel="stylesheet" href="/static/css/style.css?v={{ static_version }}">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
     <style>
@@ -20,21 +20,21 @@
         <!-- 导航栏 -->
         <nav class="navbar">
             <div class="nav-brand">
-                <h1>OpenAI 注册系统</h1>
+                <h1>Hệ thống đăng ký OpenAI</h1>
             </div>
             <div class="nav-links">
-                <a href="/" class="nav-link">注册</a>
-                <a href="/accounts" class="nav-link">账号管理</a>
-                <a href="/accounts-overview" class="nav-link">账号总览</a>
-                <a href="/email-services" class="nav-link">邮箱服务</a>
-                <a href="/payment" class="nav-link">支付</a>
-                <a href="/card-pool" class="nav-link">卡池</a>
-                <a href="/auto-team" class="nav-link">自动进team</a>
-                <a href="/logs" class="nav-link">后台日志</a>
-                <a href="/settings" class="nav-link active">设置</a>
-                <a href="/logout" class="nav-link">退出</a>
+                <a href="/" class="nav-link">Đăng ký</a>
+                <a href="/accounts" class="nav-link">Quản lý tài khoản</a>
+                <a href="/accounts-overview" class="nav-link">Tổng quan tài khoản</a>
+                <a href="/email-services" class="nav-link">Dịch vụ email</a>
+                <a href="/payment" class="nav-link">Thanh toán</a>
+                <a href="/card-pool" class="nav-link">Kho thẻ</a>
+                <a href="/auto-team" class="nav-link">Tự động vào team</a>
+                <a href="/logs" class="nav-link">Nhật ký hệ thống</a>
+                <a href="/settings" class="nav-link active">Cài đặt</a>
+                <a href="/logout" class="nav-link">Đăng xuất</a>
             </div>
-            <button class="theme-toggle" onclick="theme.toggle()" title="切换主题">
+            <button class="theme-toggle" onclick="theme.toggle()" title="Chuyển giao diện">
                 🌙
             </button>
         </nav>
@@ -42,72 +42,72 @@
         <!-- 主内容区 -->
         <main class="main-content">
             <div class="page-header">
-                <h2>系统设置</h2>
-                <p class="subtitle">配置代理、邮箱服务和系统参数</p>
+                <h2>Cài đặt hệ thống</h2>
+                <p class="subtitle">Cấu hình proxy, dịch vụ email và thông số hệ thống</p>
             </div>
 
             <!-- 设置标签页 -->
             <div class="tabs">
-                <button class="tab-btn active" data-tab="proxy">🌐 代理设置</button>
-                <button class="tab-btn" data-tab="webui">🔒 访问控制</button>
-                <button class="tab-btn" data-tab="upload">☁️ 上传</button>
-                <button class="tab-btn" data-tab="outlook">📮 Outlook配置</button>
-                <button class="tab-btn" data-tab="registration">⚙️ 注册配置</button>
-                <button class="tab-btn" data-tab="email-code">📧 验证码配置</button>
-                <button class="tab-btn" data-tab="database">💾 数据库</button>
+                <button class="tab-btn active" data-tab="proxy">🌐 Cài đặt proxy</button>
+                <button class="tab-btn" data-tab="webui">🔒 Kiểm soát truy cập</button>
+                <button class="tab-btn" data-tab="upload">☁️ Đẩy dữ liệu</button>
+                <button class="tab-btn" data-tab="outlook">📮 Cấu hình Outlook</button>
+                <button class="tab-btn" data-tab="registration">⚙️ Cấu hình đăng ký</button>
+                <button class="tab-btn" data-tab="email-code">📧 Cấu hình mã xác minh</button>
+                <button class="tab-btn" data-tab="database">💾 Cơ sở dữ liệu</button>
             </div>
 
             <!-- 代理设置 -->
             <div class="tab-content active" id="proxy-tab">
-                <!-- 动态代理配置 -->
+                <!-- Cấu hình proxy động -->
                 <div class="card" style="margin-top: var(--spacing-lg);">
                     <div class="card-header">
-                        <h3>动态代理配置</h3>
-                        <span class="hint">通过 API 每次获取新代理 IP，优先级高于代理列表</span>
+                        <h3>Cấu hình proxy động</h3>
+                        <span class="hint">Lấy IP proxy mới qua API cho mỗi lần chạy, ưu tiên cao hơn danh sách proxy</span>
                     </div>
                     <div class="card-body">
                         <form id="dynamic-proxy-form">
                             <div class="form-group">
                                 <label>
                                     <input type="checkbox" id="dynamic-proxy-enabled" name="enabled">
-                                    启用动态代理
+                                    Bật proxy động
                                 </label>
                             </div>
                             <div class="form-group">
-                                <label for="dynamic-proxy-api-url">代理 API 地址</label>
+                                <label for="dynamic-proxy-api-url">Địa chỉ API proxy</label>
                                 <input type="text" id="dynamic-proxy-api-url" name="api_url" placeholder="http://api.example.com/get_proxy">
-                                <small style="color: var(--text-muted);">每次注册任务启动时调用此 API 获取代理 URL</small>
+                                <small style="color: var(--text-muted);">Mỗi lần bắt đầu tác vụ đăng ký sẽ gọi API này để lấy URL proxy</small>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="dynamic-proxy-api-key">API 密钥 (可选)</label>
-                                    <input type="password" id="dynamic-proxy-api-key" name="api_key" placeholder="留空保持不变" autocomplete="new-password">
+                                    <label for="dynamic-proxy-api-key">API key (tùy chọn)</label>
+                                    <input type="password" id="dynamic-proxy-api-key" name="api_key" placeholder="Để trống để giữ nguyên" autocomplete="new-password">
                                 </div>
                                 <div class="form-group">
-                                    <label for="dynamic-proxy-api-key-header">密钥请求头</label>
+                                    <label for="dynamic-proxy-api-key-header">Header API key</label>
                                     <input type="text" id="dynamic-proxy-api-key-header" name="api_key_header" value="X-API-Key">
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="dynamic-proxy-result-field">JSON 字段路径 (可选)</label>
-                                <input type="text" id="dynamic-proxy-result-field" name="result_field" placeholder="例如: data.proxy 或留空使用响应原文">
-                                <small style="color: var(--text-muted);">若 API 返回 JSON，填写点号分隔的字段路径提取代理 URL；留空则将响应原文作为代理 URL</small>
+                                <label for="dynamic-proxy-result-field">Đường dẫn trường JSON (tùy chọn)</label>
+                                <input type="text" id="dynamic-proxy-result-field" name="result_field" placeholder="Ví dụ: data.proxy hoặc để trống để dùng nguyên phản hồi">
+                                <small style="color: var(--text-muted);">Nếu API trả về JSON, nhập đường dẫn trường bằng dấu chấm để lấy URL proxy; để trống sẽ dùng nguyên nội dung phản hồi làm URL proxy</small>
                             </div>
                             <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">💾 保存设置</button>
-                                <button type="button" class="btn btn-secondary" id="test-dynamic-proxy-btn">🔌 测试动态代理</button>
+                                <button type="submit" class="btn btn-primary">💾 Lưu cài đặt</button>
+                                <button type="button" class="btn btn-secondary" id="test-dynamic-proxy-btn">🔌 Kiểm tra proxy động</button>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                <!-- 代理列表 -->
+                <!-- Danh sách proxy -->
                 <div class="card" style="margin-top: var(--spacing-lg);">
                     <div class="card-header">
-                        <h3>代理列表</h3>
+                        <h3>Danh sách proxy</h3>
                         <div style="display: flex; gap: var(--spacing-sm);">
-                            <button class="btn btn-secondary btn-sm" id="test-all-proxies-btn">🔌 测试全部</button>
-                            <button class="btn btn-primary btn-sm" id="add-proxy-btn">➕ 添加代理</button>
+                            <button class="btn btn-secondary btn-sm" id="test-all-proxies-btn">🔌 Kiểm tra tất cả</button>
+                            <button class="btn btn-primary btn-sm" id="add-proxy-btn">➕ Thêm proxy</button>
                         </div>
                     </div>
                     <div class="card-body" style="padding: 0;">
@@ -116,13 +116,13 @@
                                 <thead>
                                     <tr>
                                         <th style="width: 50px;">ID</th>
-                                        <th>名称</th>
-                                        <th>类型</th>
-                                        <th>地址</th>
-                                        <th style="width: 60px;">默认</th>
-                                        <th style="width: 80px;">状态</th>
-                                        <th style="width: 120px;">最后使用</th>
-                                        <th style="width: 180px;">操作</th>
+                                        <th>Tên</th>
+                                        <th>Loại</th>
+                                        <th>Địa chỉ</th>
+                                        <th style="width: 60px;">Mặc định</th>
+                                        <th style="width: 80px;">Trạng thái</th>
+                                        <th style="width: 120px;">Lần dùng cuối</th>
+                                        <th style="width: 180px;">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="proxies-table">
@@ -130,8 +130,8 @@
                                         <td colspan="7">
                                             <div class="empty-state">
                                                 <div class="empty-state-icon">🌐</div>
-                                                <div class="empty-state-title">暂无代理</div>
-                                                <div class="empty-state-description">点击"添加代理"按钮添加代理服务器</div>
+                                                <div class="empty-state-title">Chưa có proxy</div>
+                                                <div class="empty-state-description">Nhấn "Thêm proxy" để thêm máy chủ proxy</div>
                                             </div>
                                         </td>
                                     </tr>
@@ -146,67 +146,67 @@
             <div class="tab-content" id="webui-tab">
                 <div class="card">
                     <div class="card-header">
-                        <h3>Web UI 访问密码</h3>
-                        <span class="hint">用于访问页面的密码，留空表示不修改</span>
+                        <h3>Mật khẩu truy cập Web UI</h3>
+                        <span class="hint">Mật khẩu dùng để truy cập giao diện, để trống nếu không muốn thay đổi</span>
                     </div>
                     <div class="card-body">
                         <form id="webui-settings-form">
                             <div class="form-group">
-                                <label for="webui-access-password">访问密码</label>
-                                <input type="password" id="webui-access-password" name="access_password" placeholder="留空保持不变" autocomplete="new-password">
+                                <label for="webui-access-password">Mật khẩu truy cập</label>
+                                <input type="password" id="webui-access-password" name="access_password" placeholder="Để trống để giữ nguyên" autocomplete="new-password">
                             </div>
                             <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">💾 保存设置</button>
+                                <button type="submit" class="btn btn-primary">💾 Lưu cài đặt</button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <!-- 添加代理模态框 -->
+            <!-- Thêm proxy模态框 -->
             <div class="modal" id="add-proxy-modal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3 id="proxy-modal-title">添加代理</h3>
+                        <h3 id="proxy-modal-title">Thêm proxy</h3>
                         <button class="modal-close" id="close-proxy-modal">&times;</button>
                     </div>
                     <div class="modal-body">
                         <form id="proxy-item-form">
                             <input type="hidden" id="proxy-item-id">
                             <div class="form-group">
-                                <label for="proxy-item-name">名称</label>
-                                <input type="text" id="proxy-item-name" name="name" required placeholder="例如：美国代理 1">
+                                <label for="proxy-item-name">Tên</label>
+                                <input type="text" id="proxy-item-name" name="name" required placeholder="Ví dụ: Proxy Mỹ 1">
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="proxy-item-type">类型</label>
+                                    <label for="proxy-item-type">Loại</label>
                                     <select id="proxy-item-type" name="type">
                                         <option value="http">HTTP</option>
                                         <option value="socks5">SOCKS5</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="proxy-item-host">主机地址</label>
+                                    <label for="proxy-item-host">Địa chỉ host</label>
                                     <input type="text" id="proxy-item-host" name="host" required placeholder="127.0.0.1">
                                 </div>
                                 <div class="form-group">
-                                    <label for="proxy-item-port">端口</label>
+                                    <label for="proxy-item-port">Cổng</label>
                                     <input type="number" id="proxy-item-port" name="port" required placeholder="7890">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="proxy-item-username">用户名 (可选)</label>
+                                    <label for="proxy-item-username">Tên người dùng (tùy chọn)</label>
                                     <input type="text" id="proxy-item-username" name="username" autocomplete="off">
                                 </div>
                                 <div class="form-group">
-                                    <label for="proxy-item-password">密码 (可选)</label>
+                                    <label for="proxy-item-password">Mật khẩu (tùy chọn)</label>
                                     <input type="password" id="proxy-item-password" name="password" autocomplete="new-password">
                                 </div>
                             </div>
                             <div class="form-actions">
-                                <button type="button" class="btn btn-secondary" id="cancel-proxy-btn">取消</button>
-                                <button type="submit" class="btn btn-primary">💾 保存</button>
+                                <button type="button" class="btn btn-secondary" id="cancel-proxy-btn">Hủy</button>
+                                <button type="submit" class="btn btn-primary">💾 Lưu</button>
                             </div>
                         </form>
                     </div>
@@ -218,23 +218,23 @@
                 <!-- CPA 服务管理 -->
                 <div class="card" style="margin-top: var(--spacing-lg);">
                     <div class="card-header">
-                        <h3>☁️ CPA 服务</h3>
-                        <button class="btn btn-primary btn-sm" id="add-cpa-service-btn">+ 添加服务</button>
+                        <h3>☁️ Dịch vụ CPA</h3>
+                        <button class="btn btn-primary btn-sm" id="add-cpa-service-btn">+ Thêm dịch vụ</button>
                     </div>
                     <div class="card-body" style="padding: 0;">
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th style="width:150px;">名称</th>
+                                        <th style="width:150px;">Tên</th>
                                         <th>API URL</th>
-                                        <th style="width:80px;">状态</th>
-                                        <th style="width:60px;text-align:center;">优先级</th>
-                                        <th style="width:220px;">操作</th>
+                                        <th style="width:80px;">Trạng thái</th>
+                                        <th style="width:60px;text-align:center;">Ưu tiên</th>
+                                        <th style="width:220px;">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="cpa-services-table">
-                                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">加载中...</td></tr>
+                                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Đang tải...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -244,23 +244,23 @@
                 <!-- Sub2API 服务管理 -->
                 <div class="card" style="margin-top: var(--spacing-lg);">
                     <div class="card-header">
-                        <h3>🔗 Sub2API 服务</h3>
-                        <button class="btn btn-primary btn-sm" id="add-sub2api-service-btn">+ 添加服务</button>
+                        <h3>🔗 Dịch vụ Sub2API</h3>
+                        <button class="btn btn-primary btn-sm" id="add-sub2api-service-btn">+ Thêm dịch vụ</button>
                     </div>
                     <div class="card-body" style="padding: 0;">
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th style="width:150px;">名称</th>
+                                        <th style="width:150px;">Tên</th>
                                         <th>API URL</th>
-                                        <th style="width:80px;">状态</th>
-                                        <th style="width:60px;text-align:center;">优先级</th>
-                                        <th style="width:220px;">操作</th>
+                                        <th style="width:80px;">Trạng thái</th>
+                                        <th style="width:60px;text-align:center;">Ưu tiên</th>
+                                        <th style="width:220px;">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="sub2api-services-table">
-                                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">加载中...</td></tr>
+                                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Đang tải...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -270,23 +270,23 @@
                 <!-- Team Manager 服务管理 -->
                 <div class="card" style="margin-top: var(--spacing-lg);">
                     <div class="card-header">
-                        <h3>🚀 Team Manager 服务</h3>
-                        <button class="btn btn-primary btn-sm" id="add-tm-service-btn">+ 添加服务</button>
+                        <h3>🚀 Dịch vụ Team Manager</h3>
+                        <button class="btn btn-primary btn-sm" id="add-tm-service-btn">+ Thêm dịch vụ</button>
                     </div>
                     <div class="card-body" style="padding: 0;">
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th style="width:150px;">名称</th>
+                                        <th style="width:150px;">Tên</th>
                                         <th>API URL</th>
-                                        <th style="width:80px;">状态</th>
-                                        <th style="width:60px;text-align:center;">优先级</th>
-                                        <th style="width:220px;">操作</th>
+                                        <th style="width:80px;">Trạng thái</th>
+                                        <th style="width:60px;text-align:center;">Ưu tiên</th>
+                                        <th style="width:220px;">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tm-services-table">
-                                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">加载中...</td></tr>
+                                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">Đang tải...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -298,15 +298,15 @@
             <div class="modal" id="tm-service-edit-modal">
                 <div class="modal-content" style="max-width: 500px;">
                     <div class="modal-header">
-                        <h3 id="tm-service-modal-title">添加 Team Manager 服务</h3>
+                        <h3 id="tm-service-modal-title">Thêm dịch vụ Team Manager</h3>
                         <button class="modal-close" id="close-tm-service-modal">&times;</button>
                     </div>
                     <div class="modal-body">
                         <form id="tm-service-form">
                             <input type="hidden" id="tm-service-id">
                             <div class="form-group">
-                                <label for="tm-service-name">名称 *</label>
-                                <input type="text" id="tm-service-name" placeholder="例如: 主服务" required>
+                                <label for="tm-service-name">Tên *</label>
+                                <input type="text" id="tm-service-name" placeholder="Ví dụ: Dịch vụ chính" required>
                             </div>
                             <div class="form-group">
                                 <label for="tm-service-url">API URL *</label>
@@ -314,25 +314,25 @@
                             </div>
                             <div class="form-group">
                                 <label for="tm-service-key">API Key</label>
-                                <input type="password" id="tm-service-key" placeholder="编辑时留空则保持原值" autocomplete="new-password">
+                                <input type="password" id="tm-service-key" placeholder="Khi chỉnh sửa, để trống để giữ nguyên giá trị cũ" autocomplete="new-password">
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="tm-service-priority">优先级</label>
+                                    <label for="tm-service-priority">Ưu tiên</label>
                                     <input type="number" id="tm-service-priority" value="0" min="0">
-                                    <p class="hint">数字越小优先级越高</p>
+                                    <p class="hint">Số càng nhỏ thì ưu tiên càng cao</p>
                                 </div>
                                 <div class="form-group">
                                     <label>&nbsp;</label>
                                     <label style="margin-top:10px;display:flex;align-items:center;gap:8px;">
-                                        <input type="checkbox" id="tm-service-enabled" checked> 启用
+                                        <input type="checkbox" id="tm-service-enabled" checked> Bật
                                     </label>
                                 </div>
                             </div>
                             <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">💾 保存</button>
-                                <button type="button" class="btn btn-secondary" id="test-tm-service-btn">🔌 测试连接</button>
-                                <button type="button" class="btn btn-secondary" id="cancel-tm-service-btn">取消</button>
+                                <button type="submit" class="btn btn-primary">💾 Lưu</button>
+                                <button type="button" class="btn btn-secondary" id="test-tm-service-btn">🔌 Kiểm tra kết nối</button>
+                                <button type="button" class="btn btn-secondary" id="cancel-tm-service-btn">Hủy</button>
                             </div>
                         </form>
                     </div>
@@ -343,15 +343,15 @@
             <div class="modal" id="sub2api-service-edit-modal">
                 <div class="modal-content" style="max-width: 500px;">
                     <div class="modal-header">
-                        <h3 id="sub2api-service-modal-title">添加 Sub2API 服务</h3>
+                        <h3 id="sub2api-service-modal-title">Thêm dịch vụ Sub2API</h3>
                         <button class="modal-close" id="close-sub2api-service-modal">&times;</button>
                     </div>
                     <div class="modal-body">
                         <form id="sub2api-service-form">
                             <input type="hidden" id="sub2api-service-id">
                             <div class="form-group">
-                                <label for="sub2api-service-name">名称 *</label>
-                                <input type="text" id="sub2api-service-name" placeholder="例如: 主服务" required>
+                                <label for="sub2api-service-name">Tên *</label>
+                                <input type="text" id="sub2api-service-name" placeholder="Ví dụ: Dịch vụ chính" required>
                             </div>
                             <div class="form-group">
                                 <label for="sub2api-service-url">API URL *</label>
@@ -359,25 +359,25 @@
                             </div>
                             <div class="form-group">
                                 <label for="sub2api-service-key">API Key</label>
-                                <input type="password" id="sub2api-service-key" placeholder="编辑时留空则保持原值" autocomplete="new-password">
+                                <input type="password" id="sub2api-service-key" placeholder="Khi chỉnh sửa, để trống để giữ nguyên giá trị cũ" autocomplete="new-password">
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="sub2api-service-priority">优先级</label>
+                                    <label for="sub2api-service-priority">Ưu tiên</label>
                                     <input type="number" id="sub2api-service-priority" value="0" min="0">
-                                    <p class="hint">数字越小优先级越高</p>
+                                    <p class="hint">Số càng nhỏ thì ưu tiên càng cao</p>
                                 </div>
                                 <div class="form-group">
                                     <label>&nbsp;</label>
                                     <label style="margin-top:10px;display:flex;align-items:center;gap:8px;">
-                                        <input type="checkbox" id="sub2api-service-enabled" checked> 启用
+                                        <input type="checkbox" id="sub2api-service-enabled" checked> Bật
                                     </label>
                                 </div>
                             </div>
                             <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">💾 保存</button>
-                                <button type="button" class="btn btn-secondary" id="test-sub2api-service-btn">🔌 测试连接</button>
-                                <button type="button" class="btn btn-secondary" id="cancel-sub2api-service-btn">取消</button>
+                                <button type="submit" class="btn btn-primary">💾 Lưu</button>
+                                <button type="button" class="btn btn-secondary" id="test-sub2api-service-btn">🔌 Kiểm tra kết nối</button>
+                                <button type="button" class="btn btn-secondary" id="cancel-sub2api-service-btn">Hủy</button>
                             </div>
                         </form>
                     </div>
@@ -388,42 +388,42 @@
             <div class="modal" id="cpa-service-edit-modal">
                 <div class="modal-content" style="max-width: 500px;">
                     <div class="modal-header">
-                        <h3 id="cpa-service-modal-title">添加 CPA 服务</h3>
+                        <h3 id="cpa-service-modal-title">Thêm dịch vụ CPA</h3>
                         <button class="modal-close" id="close-cpa-service-modal">&times;</button>
                     </div>
                     <div class="modal-body">
                         <form id="cpa-service-form">
                             <input type="hidden" id="cpa-service-id">
                             <div class="form-group">
-                                <label for="cpa-service-name">名称 *</label>
-                                <input type="text" id="cpa-service-name" placeholder="例如: 主服务" required>
+                                <label for="cpa-service-name">Tên *</label>
+                                <input type="text" id="cpa-service-name" placeholder="Ví dụ: Dịch vụ chính" required>
                             </div>
                             <div class="form-group">
                                 <label for="cpa-service-url">API URL *</label>
                                 <input type="text" id="cpa-service-url" placeholder="https://cpa.example.com" required>
-                                <p class="hint">支持填写根地址、`/v0/management` 或完整的 `/v0/management/auth-files` 地址</p>
+                                <p class="hint">Hỗ trợ nhập domain gốc, đường dẫn `/v0/management`, hoặc URL đầy đủ `/v0/management/auth-files`</p>
                             </div>
                             <div class="form-group">
                                 <label for="cpa-service-token">API Token</label>
-                                <input type="password" id="cpa-service-token" placeholder="编辑时留空则保持原值" autocomplete="new-password">
+                                <input type="password" id="cpa-service-token" placeholder="Khi chỉnh sửa, để trống để giữ nguyên giá trị cũ" autocomplete="new-password">
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="cpa-service-priority">优先级</label>
+                                    <label for="cpa-service-priority">Ưu tiên</label>
                                     <input type="number" id="cpa-service-priority" value="0" min="0">
-                                    <p class="hint">数字越小优先级越高</p>
+                                    <p class="hint">Số càng nhỏ thì ưu tiên càng cao</p>
                                 </div>
                                 <div class="form-group">
                                     <label>&nbsp;</label>
                                     <label style="margin-top:10px;display:flex;align-items:center;gap:8px;">
-                                        <input type="checkbox" id="cpa-service-enabled" checked> 启用
+                                        <input type="checkbox" id="cpa-service-enabled" checked> Bật
                                     </label>
                                 </div>
                             </div>
                             <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">💾 保存</button>
-                                <button type="button" class="btn btn-secondary" id="test-cpa-service-btn">🔌 测试连接</button>
-                                <button type="button" class="btn btn-secondary" id="cancel-cpa-service-btn">取消</button>
+                                <button type="submit" class="btn btn-primary">💾 Lưu</button>
+                                <button type="button" class="btn btn-secondary" id="test-cpa-service-btn">🔌 Kiểm tra kết nối</button>
+                                <button type="button" class="btn btn-secondary" id="cancel-cpa-service-btn">Hủy</button>
                             </div>
                         </form>
                     </div>
@@ -434,76 +434,76 @@
             <div class="tab-content" id="outlook-tab">
                 <div class="card">
                     <div class="card-header">
-                        <h3>Outlook OAuth 配置</h3>
-                        <span class="hint">配置 Outlook 邮箱 OAuth 认证参数</span>
+                        <h3>Cấu hình Outlook OAuth</h3>
+                        <span class="hint">Cấu hình tham số xác thực OAuth cho email Outlook</span>
                     </div>
                     <div class="card-body">
                         <form id="outlook-settings-form">
                             <div class="form-group">
-                                <label for="outlook-default-client-id">默认 Client ID</label>
+                                <label for="outlook-default-client-id">Mặc định Client ID</label>
                                 <input type="text" id="outlook-default-client-id" name="default_client_id"
                                     placeholder="24d9a0ed-8787-4584-883c-2fd79308940a">
-                                <p class="hint">Outlook OAuth 应用的 Client ID。导入账户时未填写 client_id 则使用此默认值。</p>
+                                <p class="hint">Client ID của ứng dụng Outlook OAuth. Nếu khi nhập tài khoản không điền `client_id` thì sẽ dùng giá trị mặc định này.</p>
                             </div>
 
                             <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">💾 保存设置</button>
+                                <button type="submit" class="btn btn-primary">💾 Lưu cài đặt</button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <!-- 注册配置 -->
+            <!-- Cấu hình đăng ký -->
             <div class="tab-content" id="registration-tab">
                 <div class="card">
                     <div class="card-header">
-                        <h3>注册配置</h3>
+                        <h3>Cấu hình đăng ký</h3>
                     </div>
                     <div class="card-body">
                         <form id="registration-settings-form">
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="max-retries">最大重试次数</label>
+                                    <label for="max-retries">Số lần thử lại tối đa</label>
                                     <input type="number" id="max-retries" name="max_retries" value="3" min="1" max="10">
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="timeout">超时时间 (秒)</label>
+                                    <label for="timeout">Thời gian chờ tối đa (giây)</label>
                                     <input type="number" id="timeout" name="timeout" value="120" min="30" max="600">
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="password-length">密码长度</label>
+                                    <label for="password-length">Độ dài mật khẩu</label>
                                     <input type="number" id="password-length" name="default_password_length" value="12" min="8" max="32">
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="registration-entry-flow">注册入口链路</label>
+                                    <label for="registration-entry-flow">Luồng vào trang đăng ký</label>
                                     <select id="registration-entry-flow" name="entry_flow">
-                                        <option value="native">原本注册入口链路（当前默认）</option>
-                                        <option value="abcard">ABCard 入口链路</option>
+                                        <option value="native">Luồng đăng ký gốc (mặc định hiện tại)</option>
+                                        <option value="abcard">Luồng ABCard</option>
                                     </select>
-                                    <span class="hint">切换后将影响后续新建注册任务的入口流程；Outlook 邮箱会自动使用 Outlook 链路，无需手动设置</span>
+                                    <span class="hint">Sau khi chuyển sẽ ảnh hưởng luồng vào của các tác vụ đăng ký mới; email Outlook sẽ tự dùng luồng Outlook, không cần thiết lập thủ công</span>
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="sleep-min">最小等待时间 (秒)</label>
+                                    <label for="sleep-min">Thời gian chờ tối thiểu (giây)</label>
                                     <input type="number" id="sleep-min" name="sleep_min" value="5" min="1" max="60">
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="sleep-max">最大等待时间 (秒)</label>
+                                    <label for="sleep-max">Thời gian chờ tối đa (giây)</label>
                                     <input type="number" id="sleep-max" name="sleep_max" value="30" min="5" max="120">
                                 </div>
                             </div>
 
                             <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">💾 保存设置</button>
+                                <button type="submit" class="btn btn-primary">💾 Lưu cài đặt</button>
                             </div>
                         </form>
                     </div>
@@ -514,27 +514,27 @@
             <div class="tab-content" id="email-code-tab">
                 <div class="card">
                     <div class="card-header">
-                        <h3>验证码等待配置</h3>
-                        <span class="hint">配置 Outlook 邮箱验证码获取的超时时间和轮询间隔</span>
+                        <h3>Cấu hình chờ mã xác minh</h3>
+                        <span class="hint">Cấu hình timeout và khoảng polling khi lấy mã xác minh từ Outlook</span>
                     </div>
                     <div class="card-body">
                         <form id="email-code-form">
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="email-code-timeout">等待超时 (秒)</label>
+                                    <label for="email-code-timeout">Thời gian chờ tối đa (giây)</label>
                                     <input type="number" id="email-code-timeout" name="timeout" value="120" min="30" max="600">
-                                    <span class="hint">等待验证码的最大时间，建议 60-300 秒</span>
+                                    <span class="hint">Thời gian chờ mã xác minh tối đa, khuyến nghị 60-300 giây</span>
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="email-code-poll-interval">轮询间隔 (秒)</label>
+                                    <label for="email-code-poll-interval">Khoảng polling (giây)</label>
                                     <input type="number" id="email-code-poll-interval" name="poll_interval" value="3" min="1" max="30">
-                                    <span class="hint">检查邮箱的时间间隔，建议 2-5 秒</span>
+                                    <span class="hint">Khoảng thời gian kiểm tra email, khuyến nghị 2-5 giây</span>
                                 </div>
                             </div>
 
                             <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">💾 保存设置</button>
+                                <button type="submit" class="btn btn-primary">💾 Lưu cài đặt</button>
                             </div>
                         </form>
                     </div>
@@ -542,15 +542,15 @@
 
                 <div class="card" style="margin-top: var(--spacing-lg);">
                     <div class="card-header">
-                        <h3>验证码获取策略</h3>
+                        <h3>Chiến lược lấy mã xác minh</h3>
                     </div>
                     <div class="card-body">
                         <ul class="info-list">
-                            <li><strong>渐进式检查</strong>：前 3 次轮询只检查未读邮件，之后检查所有邮件</li>
-                            <li><strong>时间戳过滤</strong>：自动跳过 OTP 发送前的旧邮件</li>
-                            <li><strong>验证码去重</strong>：避免重复使用同一验证码</li>
-                            <li><strong>多策略提取</strong>：主题优先 → 语义匹配 → 兜底匹配</li>
-                            <li><strong>发件人验证</strong>：严格验证邮件来自 OpenAI 官方</li>
+                            <li><strong>Kiểm tra tăng dần</strong>：3 lần polling đầu chỉ kiểm tra thư chưa đọc, sau đó kiểm tra toàn bộ thư</li>
+                            <li><strong>Lọc theo mốc thời gian</strong>：Tự động bỏ qua email cũ trước thời điểm gửi OTP</li>
+                            <li><strong>Loại trùng mã xác minh</strong>：Tránh dùng lặp lại cùng một mã xác minh</li>
+                            <li><strong>Trích xuất nhiều chiến lược</strong>：Ưu tiên tiêu đề → khớp ngữ nghĩa → khớp dự phòng</li>
+                            <li><strong>Xác minh người gửi</strong>：Xác minh chặt chẽ email đến từ OpenAI chính thức</li>
                         </ul>
                     </div>
                 </div>
@@ -560,32 +560,32 @@
             <div class="tab-content" id="database-tab">
                 <div class="card">
                     <div class="card-header">
-                        <h3>数据库信息</h3>
+                        <h3>Thông tin cơ sở dữ liệu</h3>
                     </div>
                     <div class="card-body">
                         <div class="info-grid" style="margin-bottom: var(--spacing-lg);">
                             <div class="info-item">
-                                <span class="label">数据库大小</span>
+                                <span class="label">Dung lượng cơ sở dữ liệu</span>
                                 <span id="db-size" class="value">-</span>
                             </div>
                             <div class="info-item">
-                                <span class="label">账号数量</span>
+                                <span class="label">Số lượng tài khoản</span>
                                 <span id="db-accounts" class="value">-</span>
                             </div>
                             <div class="info-item">
-                                <span class="label">邮箱服务数量</span>
+                                <span class="label">Số lượng dịch vụ email</span>
                                 <span id="db-services" class="value">-</span>
                             </div>
                             <div class="info-item">
-                                <span class="label">任务记录数量</span>
+                                <span class="label">Số lượng bản ghi tác vụ</span>
                                 <span id="db-tasks" class="value">-</span>
                             </div>
                         </div>
 
                         <div class="form-actions">
-                            <button class="btn btn-secondary" id="backup-btn">💾 备份数据库</button>
-                            <button class="btn btn-primary" id="import-db-btn">📥 导入数据</button>
-                            <button class="btn btn-warning" id="cleanup-btn">🧹 清理过期数据</button>
+                            <button class="btn btn-secondary" id="backup-btn">💾 Sao lưu cơ sở dữ liệu</button>
+                            <button class="btn btn-primary" id="import-db-btn">📥 Nhập dữ liệu</button>
+                            <button class="btn btn-warning" id="cleanup-btn">🧹 Dọn dữ liệu hết hạn</button>
                             <input type="file" id="db-import-file" accept=".db,.sqlite,.sqlite3" style="display: none;">
                         </div>
                     </div>
