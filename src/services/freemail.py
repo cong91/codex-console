@@ -133,24 +133,50 @@ class FreemailService(BaseEmailService):
         
         req_config = config or {}
         domain_index = 0
+        include_domain_index = False
+
         target_domain = req_config.get("domain") or self.config.get("domain")
-        
-        if target_domain and self._domains:
-            for i, d in enumerate(self._domains):
-                if d == target_domain:
-                    domain_index = i
-                    break
+        explicit_index = (
+            req_config.get("domainIndex")
+            if req_config.get("domainIndex") is not None
+            else req_config.get("index")
+        )
+        if explicit_index is None:
+            explicit_index = (
+                self.config.get("domainIndex")
+                if self.config.get("domainIndex") is not None
+                else self.config.get("index")
+            )
+
+        if target_domain:
+            include_domain_index = True
+            if self._domains:
+                for i, d in enumerate(self._domains):
+                    if d == target_domain:
+                        domain_index = i
+                        break
+        elif explicit_index is not None:
+            try:
+                parsed_index = int(explicit_index)
+                if parsed_index >= 0:
+                    domain_index = parsed_index
+                    include_domain_index = True
+                else:
+                    logger.warning(f"忽略无效 domainIndex (必须 >= 0): {explicit_index}")
+            except (TypeError, ValueError):
+                logger.warning(f"忽略无效 domainIndex (非整数): {explicit_index}")
                     
         prefix = req_config.get("name")
         try:
             if prefix:
-                body = {
-                    "local": prefix,
-                    "domainIndex": domain_index
-                }
+                body = {"local": prefix}
+                if include_domain_index:
+                    body["domainIndex"] = domain_index
                 resp = self._make_request("POST", "/api/create", json=body)
             else:
-                params = {"domainIndex": domain_index}
+                params = {}
+                if include_domain_index:
+                    params["domainIndex"] = domain_index
                 length = req_config.get("length")
                 if length:
                     params["length"] = length
