@@ -154,6 +154,8 @@ class RegistrationEngine:
         self._last_otp_validation_code: Optional[str] = None
         self._last_otp_validation_status_code: Optional[int] = None
         self._last_otp_validation_outcome: str = ""  # success/http_non_200/network_timeout/network_error
+        self._last_follow_redirects_terminal_status_code: Optional[int] = None
+        self._last_follow_redirects_terminal_url: str = ""
 
     def _log(self, message: str, level: str = "info"):
         """记录日志"""
@@ -760,6 +762,34 @@ class RegistrationEngine:
             or "auth.openai.com/about_you" in u
             or "auth.openai.com/add_phone" in u
         )
+
+    def _is_auth_login_terminal_url(self, url: str) -> bool:
+        """Whether the final URL indicates we're back on auth login page."""
+        u = str(url or "").strip().lower()
+        if not u:
+            return False
+        return (
+            "auth.openai.com/log-in" in u
+            or "auth.openai.com/login" in u
+            or "auth.openai.com/u/login" in u
+        )
+
+    def _has_positive_authenticated_session_evidence(self, result: RegistrationResult) -> bool:
+        """Guard for whether auth/session fallback is justified."""
+        if bool(str(getattr(result, "access_token", "") or "").strip()):
+            return True
+        if bool(str(getattr(result, "session_token", "") or "").strip()):
+            return True
+        try:
+            session_cookie = str(self.session.cookies.get("__Secure-next-auth.session-token") or "").strip()
+            if session_cookie:
+                return True
+            session_cookie_alt = str(self.session.cookies.get("_Secure-next-auth.session-token") or "").strip()
+            if session_cookie_alt:
+                return True
+        except Exception:
+            pass
+        return False
 
     def _detect_about_you_variant(self, *contexts: str) -> str:
         """基于当前层可见的 URL/文本上下文，推断 about-you 变体（age/birthdate）。"""
@@ -1514,6 +1544,14 @@ class RegistrationEngine:
             if not continue_url:
                 self._log("workspace/select 未返回 continue_url，尝试 OAuth authorize 兜底", "warning")
 
+        if not continue_url and otp_continue:
+            continue_url = otp_continue
+            self._log("使用 OTP 返回 continue_url 继续授权链路", "warning")
+
+        if not continue_url and cached_continue:
+            continue_url = cached_continue
+            self._log("使用 create_account 缓存 continue_url 作为兜底", "warning")
+
         if not continue_url:
             oauth_start_url = str(
                 (
@@ -1528,14 +1566,6 @@ class RegistrationEngine:
                 continue_url = oauth_start_url
                 self._log("使用 OAuth authorize URL 作为兜底 continue_url", "warning")
 
-        if not continue_url and otp_continue:
-            continue_url = otp_continue
-            self._log("使用 OTP 返回 continue_url 继续授权链路", "warning")
-
-        if not continue_url and cached_continue:
-            continue_url = cached_continue
-            self._log("使用 create_account 缓存 continue_url 作为兜底", "warning")
-
         if not continue_url:
             result.error_message = "获取 continue_url 失败"
             return False
@@ -1543,6 +1573,17 @@ class RegistrationEngine:
         self._log("顺着重定向面包屑往前走，别跟丢了...")
         callback_url, _final_url = self._follow_redirects(continue_url)
         if not callback_url:
+            is_lost_continuation = (
+                self._is_auth_login_terminal_url(_final_url)
+                and self._last_follow_redirects_terminal_status_code == 200
+            )
+            if is_lost_continuation and (not self._has_positive_authenticated_session_evidence(result)):
+                self._log(
+                    "重定向链终点落在 auth 登录页（200），判定为续跑上下文丢失；跳过盲目 auth/session 兜底",
+                    "warning",
+                )
+                result.error_message = "续跑上下文丢失（终点为登录页）"
+                return False
             self._log("未命中 OAuth 回调，尝试 auth/session 兜底抓取 token...", "warning")
             self._capture_auth_session_tokens(result, access_hint=result.access_token)
             if not result.account_id:
@@ -2634,6 +2675,9 @@ class RegistrationEngine:
     def _follow_redirects(self, start_url: str) -> Tuple[Optional[str], str]:
         """手动跟随重定向链，返回 (callback_url, final_url)。"""
         try:
+            self._last_follow_redirects_terminal_status_code = None
+            self._last_follow_redirects_terminal_url = str(start_url or "")
+
             def _is_oauth_callback(url: str) -> bool:
                 try:
                     import urllib.parse as _urlparse
@@ -2665,6 +2709,8 @@ class RegistrationEngine:
                     allow_redirects=False,
                     timeout=15
                 )
+                self._last_follow_redirects_terminal_status_code = int(response.status_code)
+                self._last_follow_redirects_terminal_url = str(current_url or "")
 
                 location = response.headers.get("Location") or ""
 

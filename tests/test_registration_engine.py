@@ -350,6 +350,135 @@ def test_native_backup_keeps_about_you_continue_url_as_valid_continuation():
     assert result.source == "register"
 
 
+def test_native_backup_prefers_otp_continue_url_before_oauth_fallback():
+    session = QueueSession([])
+    email_service = FakeEmailService([])
+    engine = RegistrationEngine(email_service)
+    engine.session = cast(Any, session)
+    engine.password = "Password!234"
+    engine._last_validate_otp_continue_url = "https://auth.example.test/from-otp"
+    engine._create_account_continue_url = "https://auth.example.test/from-create"
+    engine.oauth_start = OAuthStart(
+        auth_url="https://auth.example.test/oauth-fallback",
+        state="state-1",
+        code_verifier="verifier-1",
+        redirect_uri="http://localhost:1455/auth/callback",
+    )
+
+    followed = {}
+
+    def _verify_email_otp_with_retry(
+        stage_label: str = "验证码",
+        max_attempts: int = 3,
+        fetch_timeout: Optional[int] = None,
+        attempted_codes: Optional[Set[str]] = None,
+    ) -> bool:
+        return True
+
+    engine._verify_email_otp_with_retry = _verify_email_otp_with_retry
+    engine._get_workspace_id = lambda: None
+    engine._select_workspace = lambda workspace_id: ""
+
+    def _fake_follow_redirects(start_url: str):
+        followed["url"] = start_url
+        return ("http://localhost:1455/auth/callback?code=ok&state=s", "https://chatgpt.com/")
+
+    engine._follow_redirects = _fake_follow_redirects
+    engine._handle_oauth_callback = lambda callback_url: {
+        "account_id": "acct-1",
+        "access_token": "access-1",
+        "refresh_token": "refresh-1",
+        "id_token": "id-1",
+    }
+
+    result = RegistrationResult(success=False, email="tester@example.com")
+
+    ok = engine._complete_token_exchange_native_backup(result)
+
+    assert ok is True
+    assert followed["url"] == "https://auth.example.test/from-otp"
+    assert result.access_token == "access-1"
+
+
+def test_native_backup_login_page_terminal_without_auth_evidence_skips_auth_session_fallback():
+    session = QueueSession([])
+    email_service = FakeEmailService([])
+    engine = RegistrationEngine(email_service)
+    engine.session = cast(Any, session)
+    engine.password = "Password!234"
+    engine._last_validate_otp_continue_url = "https://auth.example.test/from-otp"
+    engine._create_account_continue_url = ""
+
+    called = {"capture": 0}
+
+    def _verify_email_otp_with_retry(
+        stage_label: str = "验证码",
+        max_attempts: int = 3,
+        fetch_timeout: Optional[int] = None,
+        attempted_codes: Optional[Set[str]] = None,
+    ) -> bool:
+        return True
+
+    engine._verify_email_otp_with_retry = _verify_email_otp_with_retry
+    engine._get_workspace_id = lambda: None
+    engine._select_workspace = lambda workspace_id: ""
+    engine._last_follow_redirects_terminal_status_code = 200
+    engine._follow_redirects = lambda start_url: (None, "https://auth.openai.com/log-in?state=lost")
+
+    def _capture_auth_session_tokens(result: RegistrationResult, access_hint: Optional[str] = None) -> bool:
+        called["capture"] += 1
+        return False
+
+    engine._capture_auth_session_tokens = _capture_auth_session_tokens
+
+    result = RegistrationResult(success=False, email="tester@example.com")
+    ok = engine._complete_token_exchange_native_backup(result)
+
+    assert ok is False
+    assert called["capture"] == 0
+
+
+def test_native_backup_login_page_terminal_with_auth_evidence_allows_auth_session_fallback():
+    session = QueueSession([])
+    session.cookies["__Secure-next-auth.session-token"] = "session-cookie-1"
+    email_service = FakeEmailService([])
+    engine = RegistrationEngine(email_service)
+    engine.session = cast(Any, session)
+    engine.password = "Password!234"
+    engine._last_validate_otp_continue_url = "https://auth.example.test/from-otp"
+    engine._create_account_continue_url = ""
+
+    called = {"capture": 0}
+
+    def _verify_email_otp_with_retry(
+        stage_label: str = "验证码",
+        max_attempts: int = 3,
+        fetch_timeout: Optional[int] = None,
+        attempted_codes: Optional[Set[str]] = None,
+    ) -> bool:
+        return True
+
+    engine._verify_email_otp_with_retry = _verify_email_otp_with_retry
+    engine._get_workspace_id = lambda: None
+    engine._select_workspace = lambda workspace_id: ""
+    engine._last_follow_redirects_terminal_status_code = 200
+    engine._follow_redirects = lambda start_url: (None, "https://auth.openai.com/log-in")
+
+    def _capture_auth_session_tokens(result: RegistrationResult, access_hint: Optional[str] = None) -> bool:
+        called["capture"] += 1
+        result.access_token = "access-1"
+        return True
+
+    engine._capture_auth_session_tokens = _capture_auth_session_tokens
+
+    result = RegistrationResult(success=False, email="tester@example.com")
+    ok = engine._complete_token_exchange_native_backup(result)
+
+    assert ok is True
+    assert called["capture"] == 1
+    assert result.access_token == "access-1"
+
+
 def test_generate_random_user_info_age_variant_has_normalized_birthdate_metadata():
     info = generate_random_user_info(about_you_variant="age")
 
