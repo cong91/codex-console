@@ -183,6 +183,14 @@ class RegistrationEngine:
         else:
             logger.info(message)
 
+    def _mark_otp_sent_at(self, reason: str) -> float:
+        """更新 OTP 阶段时间戳，并记录原因。"""
+        self._otp_sent_at = time.time()
+        self._log(
+            f"OTP 阶段时间戳更新: {self._otp_sent_at:.3f} ({reason})"
+        )
+        return self._otp_sent_at
+
     def _dump_session_cookies(self) -> str:
         """导出当前会话 cookies（用于后续支付/绑卡自动化）。"""
         if not self.session:
@@ -589,7 +597,7 @@ class RegistrationEngine:
                     is_existing = page_type == OPENAI_PAGE_TYPES["EMAIL_OTP_VERIFICATION"]
 
                     if is_existing:
-                        self._otp_sent_at = time.time()
+                        self._mark_otp_sent_at("进入登录邮箱验证码页(auth_start)")
                         if record_existing_account:
                             self._log(f"检测到已注册账号，将自动切换到登录流程")
                             self._is_existing_account = True
@@ -718,7 +726,7 @@ class RegistrationEngine:
 
                 is_existing = page_type == OPENAI_PAGE_TYPES["EMAIL_OTP_VERIFICATION"]
                 if is_existing:
-                    self._otp_sent_at = time.time()
+                    self._mark_otp_sent_at("进入登录邮箱验证码页(password_verify)")
                     self._log("登录密码校验通过，等待系统自动发送的验证码")
 
                 return SignupFormResult(
@@ -1967,6 +1975,7 @@ class RegistrationEngine:
         self._token_acquisition_requires_login = True
         self._log("注册这边忙完了，再走一趟登录把 token 请出来，收个尾...")
         self._reset_auth_flow()
+        self._mark_otp_sent_at("重启登录流程，准备刷新登录验证码阶段")
 
         did, sen_token = self._prepare_authorize_flow("重新登录")
         if not did:
@@ -2013,6 +2022,7 @@ class RegistrationEngine:
 
             page_type = str(login_start_result.page_type or "").strip()
             if page_type == OPENAI_PAGE_TYPES["EMAIL_OTP_VERIFICATION"]:
+                self._mark_otp_sent_at("重触发登录 OTP 后直达验证码页")
                 self._log("重触发登录 OTP 成功：已直达邮箱验证码页")
                 return True
 
@@ -2031,6 +2041,7 @@ class RegistrationEngine:
                 )
                 return False
 
+            self._mark_otp_sent_at("重触发登录 OTP 后进入验证码页(password_verify)")
             self._log("重触发登录 OTP 成功：已进入邮箱验证码页")
             return True
         except Exception as e:
@@ -2177,8 +2188,10 @@ class RegistrationEngine:
         """发送验证码"""
         try:
             # 记录发送时间戳
-            self._otp_sent_at = time.time()
             send_referer = str(referer or "https://auth.openai.com/create-account/password").strip()
+            is_login_phase = "email-verification" in send_referer or "log-in" in send_referer
+            reason = "登录验证码重发(当前会话)" if is_login_phase else "发送注册验证码"
+            self._mark_otp_sent_at(reason)
 
             response = self.session.get(
                 OPENAI_API_ENDPOINTS["send_otp"],

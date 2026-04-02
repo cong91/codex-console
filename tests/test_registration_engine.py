@@ -437,3 +437,17 @@ def test_chatgpt_about_you_variant_detects_birthday_markers_from_state_payload()
     variant = ChatGPTClient._detect_about_you_variant_from_state(state)
 
     assert variant == "birthdate"
+
+
+def test_send_verification_code_updates_otp_timestamp_for_login_resend():
+    session = QueueSession([
+        ("GET", OPENAI_API_ENDPOINTS["send_otp"], DummyResponse(payload={})),
+    ])
+    engine = RegistrationEngine(FakeEmailService([]))
+    engine.session = cast(Any, session)
+    engine._otp_sent_at = None
+
+    ok = engine._send_verification_code(referer="https://auth.openai.com/email-verification")
+
+    assert ok is True
+    assert engine._otp_sent_at is not None

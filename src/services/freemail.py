@@ -8,6 +8,7 @@ import time
 import logging
 import random
 import string
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 
 from .base import BaseEmailService, EmailServiceError, EmailServiceType
@@ -219,15 +220,52 @@ class FreemailService(BaseEmailService):
             email_id: 未使用，保留接口兼容
             timeout: 超时时间（秒）
             pattern: 验证码正则
-            otp_sent_at: OTP 发送时间戳（暂未使用）
+            otp_sent_at: OTP 发送时间戳（用于过滤旧邮件）
 
         Returns:
             验证码字符串，超时返回 None
         """
         logger.info(f"正在从 Freemail 邮箱 {email} 获取验证码...")
 
+        def _parse_mail_timestamp(mail: Dict[str, Any]) -> Optional[float]:
+            for key in ("createdAt", "created_at", "date", "created", "timestamp", "time"):
+                value = mail.get(key)
+                if value is None:
+                    continue
+                if isinstance(value, (int, float)):
+                    ts = float(value)
+                    if ts > 10**12:
+                        ts = ts / 1000.0
+                    if ts > 0:
+                        return ts
+                    continue
+
+                text = str(value).strip()
+                if not text:
+                    continue
+                try:
+                    ts = float(text)
+                    if ts > 10**12:
+                        ts = ts / 1000.0
+                    if ts > 0:
+                        return ts
+                except ValueError:
+                    pass
+
+                iso_text = text[:-1] + "+00:00" if text.endswith("Z") else text
+                try:
+                    dt = datetime.fromisoformat(iso_text)
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    return dt.timestamp()
+                except ValueError:
+                    continue
+            return None
+
         start_time = time.time()
         seen_mail_ids: set = set()
+        otp_min_timestamp = (float(otp_sent_at) - 2.0) if otp_sent_at else None
+        unknown_ts_grace_seconds = 15
 
         while time.time() - start_time < timeout:
             try:
@@ -235,6 +273,9 @@ class FreemailService(BaseEmailService):
                 if not isinstance(mails, list):
                     time.sleep(3)
                     continue
+
+                candidates: List[Dict[str, Any]] = []
+                unknown_ts_candidates: List[Dict[str, Any]] = []
 
                 for mail in mails:
                     mail_id = mail.get("id")
@@ -252,33 +293,69 @@ class FreemailService(BaseEmailService):
                     if "openai" not in content.lower():
                         continue
 
+                    mail_ts = _parse_mail_timestamp(mail)
+                    if otp_min_timestamp and mail_ts is not None and mail_ts < otp_min_timestamp:
+                        continue
+
                     # 尝试直接使用 Freemail 提取的验证码
                     v_code = mail.get("verification_code")
-                    if v_code:
-                        logger.info(f"从 Freemail 邮箱 {email} 找到验证码: {v_code}")
-                        self.update_status(True)
-                        return v_code
+                    code = str(v_code).strip() if v_code else ""
 
                     # 如果没有直接提供，通过正则匹配 preview
-                    match = re.search(pattern, content)
-                    if match:
-                        code = match.group(1)
-                        logger.info(f"从 Freemail 邮箱 {email} 找到验证码: {code}")
-                        self.update_status(True)
-                        return code
-
-                    # 如果依然未找到，获取邮件详情进行匹配
-                    try:
-                        detail = self._make_request("GET", f"/api/email/{mail_id}")
-                        full_content = str(detail.get("content", "")) + "\n" + str(detail.get("html_content", ""))
-                        match = re.search(pattern, full_content)
+                    if not code:
+                        match = re.search(pattern, content)
                         if match:
                             code = match.group(1)
-                            logger.info(f"从 Freemail 邮箱 {email} 找到验证码: {code}")
-                            self.update_status(True)
-                            return code
-                    except Exception as e:
-                        logger.debug(f"获取 Freemail 邮件详情失败: {e}")
+
+                    # 如果依然未找到，获取邮件详情进行匹配
+                    if not code:
+                        try:
+                            detail = self._make_request("GET", f"/api/email/{mail_id}")
+                            detail_ts = _parse_mail_timestamp(detail) if isinstance(detail, dict) else None
+                            if detail_ts is not None:
+                                mail_ts = detail_ts
+                            full_content = str(detail.get("content", "")) + "\n" + str(detail.get("html_content", ""))
+                            match = re.search(pattern, full_content)
+                            if match:
+                                code = match.group(1)
+                        except Exception as e:
+                            logger.debug(f"获取 Freemail 邮件详情失败: {e}")
+
+                    if not code:
+                        continue
+
+                    candidate = {"mail_id": str(mail_id), "code": code, "mail_ts": mail_ts}
+                    if otp_min_timestamp and mail_ts is None:
+                        unknown_ts_candidates.append(candidate)
+                    else:
+                        candidates.append(candidate)
+
+                elapsed = time.time() - start_time
+                if otp_min_timestamp and (not candidates) and unknown_ts_candidates and elapsed < unknown_ts_grace_seconds:
+                    # 优先等待带时间戳的新邮件，避免登录阶段误取注册旧码。
+                    time.sleep(3)
+                    continue
+
+                all_candidates = candidates + unknown_ts_candidates
+                if all_candidates:
+                    best = sorted(
+                        all_candidates,
+                        key=lambda item: (
+                            1 if item.get("mail_ts") is not None else 0,
+                            float(item.get("mail_ts") or 0.0),
+                        ),
+                        reverse=True,
+                    )[0]
+                    logger.info(
+                        "从 Freemail 邮箱 %s 找到验证码: %s（mail_id=%s ts=%s otp_sent_at=%s）",
+                        email,
+                        best["code"],
+                        best.get("mail_id"),
+                        best.get("mail_ts"),
+                        otp_sent_at,
+                    )
+                    self.update_status(True)
+                    return str(best["code"])
 
             except Exception as e:
                 logger.debug(f"检查 Freemail 邮件时出错: {e}")
