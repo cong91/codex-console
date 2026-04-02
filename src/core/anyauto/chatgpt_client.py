@@ -6,6 +6,7 @@ ChatGPT 注册客户端模块
 import random
 import uuid
 import time
+import re
 from urllib.parse import urlparse
 
 try:
@@ -227,6 +228,74 @@ class ChatGPTClient:
     def _state_is_about_you(self, state: FlowState):
         target = f"{state.continue_url} {state.current_url}".lower()
         return state.page_type == "about_you" or "about-you" in target
+
+    @staticmethod
+    def _detect_about_you_variant_from_state(state: FlowState, variant_hint=None):
+        hinted = str(variant_hint or "").strip().lower()
+        if hinted in {"age", "birthdate"}:
+            return hinted
+
+        merged = " ".join(
+            [
+                str(getattr(state, "current_url", "") or ""),
+                str(getattr(state, "continue_url", "") or ""),
+                str(getattr(state, "page_type", "") or ""),
+                str(getattr(state, "payload", "") or ""),
+                str(getattr(state, "raw", "") or ""),
+            ]
+        ).lower()
+
+        age_markers = (
+            "about-you/age",
+            "about_you/age",
+            "variant=age",
+            "step=age",
+            "screen=age",
+            "mode=age",
+            "page=age",
+            "form=age",
+        )
+        if any(marker in merged for marker in age_markers):
+            return "age"
+
+        strong_age_text_markers = (
+            "how old are you",
+            "last step: confirm your age",
+            "confirm your age",
+        )
+        birthday_text_markers = (
+            "birthday",
+            "birth date",
+            "date of birth",
+            "mm/dd/yyyy",
+            "dd/mm/yyyy",
+            "yyyy-mm-dd",
+            "month/day/year",
+        )
+        has_strong_age_text = any(marker in merged for marker in strong_age_text_markers)
+        has_birthday_text = any(marker in merged for marker in birthday_text_markers)
+
+        if has_strong_age_text:
+            return "age"
+        if has_birthday_text:
+            return "birthdate"
+
+        if ("about-you" in merged or "about_you" in merged) and re.search(r"(?:^|[^a-z])age(?:[^a-z]|$)", merged):
+            return "age"
+        return "birthdate"
+
+    @staticmethod
+    def _extract_age_hint_from_state(state: FlowState):
+        for source in (state.payload, state.raw):
+            if not isinstance(source, dict):
+                continue
+            for key in ("age", "about_you_age", "user_age"):
+                value = source.get(key)
+                if isinstance(value, int):
+                    return value
+                if isinstance(value, str) and value.strip().isdigit():
+                    return int(value.strip())
+        return None
 
     def _state_is_add_phone(self, state: FlowState):
         target = f"{state.continue_url} {state.current_url}".lower()
@@ -661,7 +730,15 @@ class ChatGPTClient:
             self._log(f"验证异常: {e}")
             return False, str(e)
     
-    def create_account(self, first_name, last_name, birthdate, return_state=False):
+    def create_account(
+        self,
+        first_name,
+        last_name,
+        birthdate,
+        return_state=False,
+        about_you_variant=None,
+        age=None,
+    ):
         """
         完成账号创建（提交姓名和生日）
         
@@ -669,12 +746,21 @@ class ChatGPTClient:
             first_name: 名
             last_name: 姓
             birthdate: 生日 (YYYY-MM-DD)
+            about_you_variant: about-you 变体（age/birthdate）
+            age: 当页面为 age 变体时的年龄元信息
             
         Returns:
             tuple: (success, message)
         """
         name = f"{first_name} {last_name}"
         self._log(f"完成账号创建: {name}")
+        variant = str(about_you_variant or "").strip().lower()
+        normalized_variant = "age" if variant == "age" else "birthdate"
+        if normalized_variant == "age":
+            age_hint = str(age) if age is not None else "unknown"
+            self._log(
+                f"about-you age 变体已归一化为 birthdate 后提交: age={age_hint}, birthdate={birthdate}"
+            )
         url = f"{self.AUTH}/api/accounts/create_account"
 
         sentinel_token = build_sentinel_token(
@@ -731,7 +817,17 @@ class ChatGPTClient:
             self._log(f"创建异常: {e}")
             return False, str(e)
     
-    def register_complete_flow(self, email, password, first_name, last_name, birthdate, skymail_client):
+    def register_complete_flow(
+        self,
+        email,
+        password,
+        first_name,
+        last_name,
+        birthdate,
+        skymail_client,
+        about_you_variant=None,
+        age=None,
+    ):
         """
         完整的注册流程（基于原版 run_register 方法）
         
@@ -742,6 +838,8 @@ class ChatGPTClient:
             last_name: 姓
             birthdate: 生日
             skymail_client: Skymail 客户端（用于获取验证码）
+            about_you_variant: about-you 变体（age/birthdate）
+            age: about-you age 变体对应年龄元信息
             
         Returns:
             tuple: (success, message)
@@ -872,11 +970,20 @@ class ChatGPTClient:
             if self._state_is_about_you(state):
                 if account_created:
                     return False, "填写信息阶段重复进入"
+                detected_variant = self._detect_about_you_variant_from_state(state, about_you_variant)
+                detected_age = age if age is not None else self._extract_age_hint_from_state(state)
+                self._log(f"检测到 about-you 变体: {detected_variant}")
+                if detected_variant == "age":
+                    self._log(
+                        f"about-you age 变体将在 create_account 前归一化为 birthdate: age={detected_age if detected_age is not None else 'unknown'}, birthdate={birthdate}"
+                    )
                 success, next_state = self.create_account(
                     first_name,
                     last_name,
                     birthdate,
                     return_state=True,
+                    about_you_variant=detected_variant,
+                    age=detected_age,
                 )
                 if not success:
                     return False, f"创建账号失败: {next_state}"

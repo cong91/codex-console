@@ -3,9 +3,9 @@
 """
 
 import random
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 
 # ============================================================================
@@ -150,6 +150,8 @@ OPENAI_PAGE_TYPES = {
     "EMAIL_OTP_VERIFICATION": "email_otp_verification",  # 已注册账号，需要 OTP 验证
     "PASSWORD_REGISTRATION": "create_account_password",  # 新账号，需要设置密码
     "LOGIN_PASSWORD": "login_password",  # 登录流程，需要输入密码
+    "ABOUT_YOU": "about-you",  # 注册继续流程：about-you 信息采集页
+    "ADD_PHONE": "add-phone",  # 注册继续流程：add-phone 风控/验证页
 }
 
 # ============================================================================
@@ -265,34 +267,67 @@ FIRST_NAMES = [
     "Grace", "Lily", "Chloe", "Zoey", "Nora", "Aria", "Hazel", "Aurora", "Stella", "Ivy"
 ]
 
-def generate_random_user_info() -> dict:
+def _is_leap_year(year: int) -> bool:
+    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+
+
+def _days_in_month(year: int, month: int) -> int:
+    if month in {1, 3, 5, 7, 8, 10, 12}:
+        return 31
+    if month in {4, 6, 9, 11}:
+        return 30
+    return 29 if _is_leap_year(year) else 28
+
+
+def _birthdate_from_age(age: int, today: Optional[date] = None) -> str:
+    """根据年龄生成标准化生日（YYYY-MM-DD），确保年龄落在当前年龄上。"""
+    today = today or datetime.now().date()
+    year = today.year - int(age)
+    month = random.randint(1, 12)
+    day = random.randint(1, _days_in_month(year, month))
+    candidate = date(year, month, day)
+
+    # 若生日尚未到来，当前年龄会少 1；回拨一年确保与目标年龄一致。
+    if candidate > today:
+        candidate = date(year - 1, month, day)
+
+    return candidate.strftime("%Y-%m-%d")
+
+
+def generate_random_user_info(about_you_variant: Optional[str] = None) -> dict:
     """
     生成随机用户信息
 
+    Args:
+        about_you_variant: about-you 页面变体，可选值为 age / birthdate。
+            为空时默认 birthdate，保持向后兼容。
+
     Returns:
-        包含 name 和 birthdate 的字典
+        包含 name、birthdate 及 about-you 变体元信息的字典。
     """
     # 随机选择名字
     name = random.choice(FIRST_NAMES)
 
-    # 生成随机生日（18-45岁）
-    current_year = datetime.now().year
-    birth_year = random.randint(current_year - 45, current_year - 18)
-    birth_month = random.randint(1, 12)
-    # 根据月份确定天数
-    if birth_month in [1, 3, 5, 7, 8, 10, 12]:
-        birth_day = random.randint(1, 31)
-    elif birth_month in [4, 6, 9, 11]:
-        birth_day = random.randint(1, 30)
-    else:
-        # 2月，简化处理
-        birth_day = random.randint(1, 28)
+    raw_variant = str(about_you_variant or "").strip().lower()
+    normalized_variant = "age" if raw_variant == "age" else "birthdate"
+    generated_age = None
 
-    birthdate = f"{birth_year}-{birth_month:02d}-{birth_day:02d}"
+    if normalized_variant == "age":
+        generated_age = random.randint(18, 45)
+        birthdate = _birthdate_from_age(generated_age)
+    else:
+        # 生成随机生日（18-45岁）
+        current_year = datetime.now().year
+        birth_year = random.randint(current_year - 45, current_year - 18)
+        birth_month = random.randint(1, 12)
+        birth_day = random.randint(1, _days_in_month(birth_year, birth_month))
+        birthdate = f"{birth_year}-{birth_month:02d}-{birth_day:02d}"
 
     return {
         "name": name,
-        "birthdate": birthdate
+        "birthdate": birthdate,
+        "about_you_variant": normalized_variant,
+        "about_you_age": generated_age,
     }
 
 # 保留默认值供兼容

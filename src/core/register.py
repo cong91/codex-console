@@ -741,6 +741,64 @@ class RegistrationEngine:
 
         return SignupFormResult(success=False, error_message="提交登录密码失败: 超过最大重试次数")
 
+    def _is_registration_gate_url(self, url: str) -> bool:
+        """Whether a continue_url is a legitimate registration continuation gate."""
+        u = str(url or "").strip().lower()
+        if not u:
+            return False
+        return (
+            "auth.openai.com/about-you" in u
+            or "auth.openai.com/add-phone" in u
+            or "auth.openai.com/about_you" in u
+            or "auth.openai.com/add_phone" in u
+        )
+
+    def _detect_about_you_variant(self, *contexts: str) -> str:
+        """基于当前层可见的 URL/文本上下文，推断 about-you 变体（age/birthdate）。"""
+        merged = " ".join(str(item or "") for item in contexts).strip().lower()
+        if not merged:
+            return "birthdate"
+
+        age_markers = (
+            "about-you/age",
+            "about_you/age",
+            "variant=age",
+            "step=age",
+            "screen=age",
+            "mode=age",
+            "page=age",
+            "form=age",
+        )
+        if any(marker in merged for marker in age_markers):
+            return "age"
+
+        strong_age_text_markers = (
+            "how old are you",
+            "last step: confirm your age",
+            "confirm your age",
+        )
+        birthday_text_markers = (
+            "birthday",
+            "birth date",
+            "date of birth",
+            "mm/dd/yyyy",
+            "dd/mm/yyyy",
+            "yyyy-mm-dd",
+            "month/day/year",
+        )
+        has_strong_age_text = any(marker in merged for marker in strong_age_text_markers)
+        has_birthday_text = any(marker in merged for marker in birthday_text_markers)
+
+        if has_strong_age_text:
+            return "age"
+        if has_birthday_text:
+            return "birthdate"
+
+        if ("about-you" in merged or "about_you" in merged) and re.search(r"(?:^|[^a-z])age(?:[^a-z]|$)", merged):
+            return "age"
+
+        return "birthdate"
+
     def _reset_auth_flow(self) -> None:
         """重置会话，准备重新发起 OAuth 流程。"""
         self.http_client.close()
@@ -1291,8 +1349,9 @@ class RegistrationEngine:
             self._log("直抓未命中，补一次 chatgpt 预热后再抓取...", "warning")
             self._warmup_chatgpt_session()
             captured = self._capture_auth_session_tokens(result, access_hint=result.access_token)
-        final_url_lower = str(final_url or "").lower()
-        add_phone_gate = ("auth.openai.com/add-phone" in final_url_lower)
+        add_phone_gate = self._is_registration_gate_url(final_url) and (
+            "add-phone" in str(final_url or "").lower() or "add_phone" in str(final_url or "").lower()
+        )
 
         # ABCard 入口常见失败点：被 add-phone 风控页截断，导致拿不到 callback/session。
         if add_phone_gate and (not callback_url) and (not captured):
@@ -1385,12 +1444,6 @@ class RegistrationEngine:
         原生入口对齐备份版收尾链路：
         登录验证码 -> Workspace -> redirect -> OAuth callback -> token 入袋。
         """
-        def _is_registration_gate_url(url: str) -> bool:
-            u = str(url or "").strip().lower()
-            if not u:
-                return False
-            return ("auth.openai.com/about-you" in u) or ("auth.openai.com/add-phone" in u)
-
         self._log("等待登录验证码到场，最后这位嘉宾还在路上...")
         self._log("核对登录验证码，验明正身一下...")
         login_otp_tried_codes: set[str] = set()
@@ -1440,14 +1493,12 @@ class RegistrationEngine:
 
         continue_url = ""
         otp_continue = str(self._last_validate_otp_continue_url or "").strip()
-        if otp_continue and _is_registration_gate_url(otp_continue):
-            self._log("OTP 返回 continue_url 指向注册门页（about-you/add-phone），本轮收尾忽略该地址", "warning")
-            otp_continue = ""
+        if otp_continue and self._is_registration_gate_url(otp_continue):
+            self._log("OTP 返回 continue_url 指向注册续跑页（about-you/add-phone），保留该地址继续链路", "warning")
 
         cached_continue = str(self._create_account_continue_url or "").strip()
-        if cached_continue and _is_registration_gate_url(cached_continue):
-            self._log("create_account 缓存 continue_url 指向注册门页（about-you/add-phone），本轮收尾忽略该地址", "warning")
-            cached_continue = ""
+        if cached_continue and self._is_registration_gate_url(cached_continue):
+            self._log("create_account 缓存 continue_url 指向注册续跑页（about-you/add-phone），保留该地址继续链路", "warning")
 
         if workspace_id:
             self._log("选择 Workspace，安排个靠谱座位...")
@@ -2331,9 +2382,27 @@ class RegistrationEngine:
     def _create_user_account(self) -> bool:
         """创建用户账户"""
         try:
-            user_info = generate_random_user_info()
-            self._log(f"生成用户信息: {user_info['name']}, 生日: {user_info['birthdate']}")
-            create_account_body = json.dumps(user_info)
+            detected_variant = self._detect_about_you_variant(
+                self._last_validate_otp_continue_url,
+                self._create_account_continue_url,
+            )
+            user_info = generate_random_user_info(about_you_variant=detected_variant)
+
+            normalized_variant = str(user_info.get("about_you_variant") or "birthdate").strip().lower()
+            name = str(user_info.get("name") or "").strip()
+            birthdate = str(user_info.get("birthdate") or "").strip()
+            age_meta = user_info.get("about_you_age")
+
+            self._log(f"检测到 about-you 变体: {normalized_variant}")
+            if normalized_variant == "age":
+                self._log(f"about-you age 变体已归一化为 birthdate 提交: age={age_meta}, birthdate={birthdate}")
+            self._log(f"生成用户信息: {name}, 生日: {birthdate}")
+
+            # create_account 提交契约保持为 name + birthdate
+            create_account_body = json.dumps({
+                "name": name,
+                "birthdate": birthdate,
+            })
 
             response = self.session.post(
                 OPENAI_API_ENDPOINTS["create_account"],

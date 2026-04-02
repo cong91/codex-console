@@ -1,10 +1,19 @@
 import base64
 import json
+import re
+from typing import Any, Optional, Set, cast
 
-from src.config.constants import EmailServiceType, OPENAI_API_ENDPOINTS, OPENAI_PAGE_TYPES
+from src.config.constants import (
+    EmailServiceType,
+    OPENAI_API_ENDPOINTS,
+    OPENAI_PAGE_TYPES,
+    generate_random_user_info,
+)
+from src.core.anyauto.chatgpt_client import ChatGPTClient
+from src.core.anyauto.utils import FlowState
 from src.core.http_client import OpenAIHTTPClient
 from src.core.openai.oauth import OAuthStart
-from src.core.register import RegistrationEngine
+from src.core.register import RegistrationEngine, RegistrationResult
 from src.services.base import BaseEmailService
 
 
@@ -294,3 +303,137 @@ def test_existing_account_login_uses_auto_sent_otp_without_manual_send():
     assert len(email_service.otp_requests) == 1
     assert email_service.otp_requests[0]["otp_sent_at"] is not None
     assert result.metadata["token_acquired_via_relogin"] is False
+
+
+def test_native_backup_keeps_about_you_continue_url_as_valid_continuation():
+    session = QueueSession([])
+    email_service = FakeEmailService([])
+    engine = RegistrationEngine(email_service)
+    engine.session = cast(Any, session)
+    engine.password = "Password!234"
+    engine._last_validate_otp_continue_url = "https://auth.openai.com/about-you"
+    engine._create_account_continue_url = ""
+
+    followed = {}
+
+    def _verify_email_otp_with_retry(
+        stage_label: str = "验证码",
+        max_attempts: int = 3,
+        fetch_timeout: Optional[int] = None,
+        attempted_codes: Optional[Set[str]] = None,
+    ) -> bool:
+        return True
+
+    engine._verify_email_otp_with_retry = _verify_email_otp_with_retry
+    engine._get_workspace_id = lambda: None
+    engine._select_workspace = lambda workspace_id: ""
+
+    def _fake_follow_redirects(start_url: str):
+        followed["url"] = start_url
+        return ("http://localhost:1455/auth/callback?code=ok&state=s", "https://chatgpt.com/")
+
+    engine._follow_redirects = _fake_follow_redirects
+    engine._handle_oauth_callback = lambda callback_url: {
+        "account_id": "acct-1",
+        "access_token": "access-1",
+        "refresh_token": "refresh-1",
+        "id_token": "id-1",
+    }
+
+    result = RegistrationResult(success=False, email="tester@example.com")
+
+    ok = engine._complete_token_exchange_native_backup(result)
+
+    assert ok is True
+    assert followed["url"] == "https://auth.openai.com/about-you"
+    assert result.access_token == "access-1"
+    assert result.source == "register"
+
+
+def test_generate_random_user_info_age_variant_has_normalized_birthdate_metadata():
+    info = generate_random_user_info(about_you_variant="age")
+
+    assert info["about_you_variant"] == "age"
+    assert isinstance(info["about_you_age"], int)
+    assert 18 <= info["about_you_age"] <= 45
+    assert bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", info["birthdate"]))
+
+
+def test_create_user_account_age_variant_submits_birthdate_contract(monkeypatch):
+    session = QueueSession([
+        ("POST", OPENAI_API_ENDPOINTS["create_account"], DummyResponse(payload={})),
+    ])
+    engine = RegistrationEngine(FakeEmailService([]))
+    engine.session = cast(Any, session)
+    engine._last_validate_otp_continue_url = "https://auth.openai.com/about-you/age"
+
+    called = {}
+
+    def _fake_generate_random_user_info(about_you_variant=None):
+        called["variant"] = about_you_variant
+        return {
+            "name": "Age Tester",
+            "birthdate": "2001-02-03",
+            "about_you_variant": "age",
+            "about_you_age": 25,
+        }
+
+    monkeypatch.setattr("src.core.register.generate_random_user_info", _fake_generate_random_user_info)
+
+    ok = engine._create_user_account()
+
+    assert ok is True
+    assert called["variant"] == "age"
+    body = json.loads(session.calls[0]["kwargs"]["data"])
+    assert body == {
+        "name": "Age Tester",
+        "birthdate": "2001-02-03",
+    }
+    assert any("检测到 about-you 变体: age" in log for log in engine.logs)
+    assert any("归一化为 birthdate" in log for log in engine.logs)
+
+
+def test_detect_about_you_variant_prefers_age_heading_markers():
+    engine = RegistrationEngine.__new__(RegistrationEngine)
+
+    variant = RegistrationEngine._detect_about_you_variant(
+        engine,
+        "https://auth.openai.com/about-you",
+        "Last step: Confirm your age",
+    )
+
+    assert variant == "age"
+
+
+def test_detect_about_you_variant_prefers_birthdate_for_birthday_markers():
+    engine = RegistrationEngine.__new__(RegistrationEngine)
+
+    variant = RegistrationEngine._detect_about_you_variant(
+        engine,
+        "https://auth.openai.com/about-you",
+        "Please enter your birthday (MM/DD/YYYY)",
+    )
+
+    assert variant == "birthdate"
+
+
+def test_chatgpt_about_you_variant_detects_heading_markers_from_state_payload():
+    state = FlowState(
+        page_type="about_you",
+        payload={"heading": "How old are you?", "label": "Age"},
+    )
+
+    variant = ChatGPTClient._detect_about_you_variant_from_state(state)
+
+    assert variant == "age"
+
+
+def test_chatgpt_about_you_variant_detects_birthday_markers_from_state_payload():
+    state = FlowState(
+        page_type="about_you",
+        payload={"hint": "Enter your birthday", "format": "MM/DD/YYYY"},
+    )
+
+    variant = ChatGPTClient._detect_about_you_variant_from_state(state)
+
+    assert variant == "birthdate"
