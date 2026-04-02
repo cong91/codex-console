@@ -228,7 +228,16 @@ class FreemailService(BaseEmailService):
         logger.info(f"正在从 Freemail 邮箱 {email} 获取验证码...")
 
         def _parse_mail_timestamp(mail: Dict[str, Any]) -> Optional[float]:
-            for key in ("createdAt", "created_at", "date", "created", "timestamp", "time"):
+            for key in (
+                "received_at",
+                "receivedAt",
+                "createdAt",
+                "created_at",
+                "date",
+                "created",
+                "timestamp",
+                "time",
+            ):
                 value = mail.get(key)
                 if value is None:
                     continue
@@ -259,11 +268,20 @@ class FreemailService(BaseEmailService):
                         dt = dt.replace(tzinfo=timezone.utc)
                     return dt.timestamp()
                 except ValueError:
-                    continue
+                    pass
+
+                # Freemail 常见格式: "YYYY-MM-DD HH:MM:SS"（无时区），按 UTC 解析
+                for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"):
+                    try:
+                        dt = datetime.strptime(text, fmt).replace(tzinfo=timezone.utc)
+                        return dt.timestamp()
+                    except ValueError:
+                        continue
             return None
 
         start_time = time.time()
         seen_mail_ids: set = set()
+        pending_unknown_ts_candidates: List[Dict[str, Any]] = []
         otp_min_timestamp = (float(otp_sent_at) - 2.0) if otp_sent_at else None
         unknown_ts_grace_seconds = 15
 
@@ -330,13 +348,20 @@ class FreemailService(BaseEmailService):
                     else:
                         candidates.append(candidate)
 
+                if unknown_ts_candidates:
+                    known_pending_ids = {str(item.get("mail_id")) for item in pending_unknown_ts_candidates}
+                    for item in unknown_ts_candidates:
+                        mail_id = str(item.get("mail_id"))
+                        if mail_id not in known_pending_ids:
+                            pending_unknown_ts_candidates.append(item)
+
                 elapsed = time.time() - start_time
                 if otp_min_timestamp and (not candidates) and unknown_ts_candidates and elapsed < unknown_ts_grace_seconds:
                     # 优先等待带时间戳的新邮件，避免登录阶段误取注册旧码。
                     time.sleep(3)
                     continue
 
-                all_candidates = candidates + unknown_ts_candidates
+                all_candidates = candidates + pending_unknown_ts_candidates
                 if all_candidates:
                     best = sorted(
                         all_candidates,
