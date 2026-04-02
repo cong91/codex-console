@@ -185,6 +185,18 @@ class RegistrationEngine:
         else:
             logger.info(message)
 
+    @staticmethod
+    def _forensic_clip(value: Any, limit: int = 2000) -> str:
+        """裁剪取证日志内容，避免单条日志过长。"""
+        try:
+            text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+        except Exception:
+            text = str(value)
+        text = str(text or "")
+        if len(text) <= limit:
+            return text
+        return f"{text[:limit]}... [truncated {len(text) - limit} chars]"
+
     def _mark_otp_sent_at(self, reason: str) -> float:
         """更新 OTP 阶段时间戳，并记录原因。"""
         self._otp_sent_at = time.time()
@@ -1354,6 +1366,7 @@ class RegistrationEngine:
         self._log("摸一下 Workspace ID，看看该坐哪桌...")
         workspace_id = self._get_workspace_id()
         continue_url = ""
+        continue_url_source = ""
         if workspace_id:
             result.workspace_id = workspace_id
 
@@ -1363,14 +1376,18 @@ class RegistrationEngine:
                 cached_continue = str(self._create_account_continue_url or "").strip()
                 if cached_continue:
                     continue_url = cached_continue
+                    continue_url_source = "create_account_cached_after_select_workspace_empty"
                     self._log("workspace/select 未返回 continue_url，改用 create_account 缓存 continue_url", "warning")
                 else:
                     result.error_message = "选择 Workspace 失败"
                     return False
+            else:
+                continue_url_source = "select_workspace"
         else:
             cached_continue = str(self._create_account_continue_url or "").strip()
             if cached_continue:
                 continue_url = cached_continue
+                continue_url_source = "create_account_cached_no_workspace"
                 self._log("未获取到 Workspace ID，改用 create_account 缓存 continue_url 继续链路", "warning")
             else:
                 result.error_message = "获取 Workspace ID 失败"
@@ -1390,6 +1407,26 @@ class RegistrationEngine:
         add_phone_gate = self._is_registration_gate_url(final_url) and (
             "add-phone" in str(final_url or "").lower() or "add_phone" in str(final_url or "").lower()
         )
+
+        if add_phone_gate:
+            forensic_pre_add_phone = {
+                "continue_url_source": continue_url_source or "unknown",
+                "continue_url": continue_url,
+                "final_url": final_url,
+                "callback_url_present": bool(callback_url),
+                "captured_session_access": bool(captured),
+                "workspace_id_result": str(result.workspace_id or ""),
+                "workspace_id_last_validate_otp": str(self._last_validate_otp_workspace_id or ""),
+                "workspace_id_create_account_cached": str(self._create_account_workspace_id or ""),
+                "continue_url_last_validate_otp": str(self._last_validate_otp_continue_url or ""),
+                "continue_url_create_account_cached": str(self._create_account_continue_url or ""),
+                "follow_redirects_terminal_status": self._last_follow_redirects_terminal_status_code,
+                "follow_redirects_terminal_url": self._last_follow_redirects_terminal_url,
+            }
+            self._log(
+                "[FORENSIC][pre_add_phone] "
+                f"payload={self._forensic_clip(forensic_pre_add_phone, limit=6000)}"
+            )
 
         # ABCard 入口常见失败点：被 add-phone 风控页截断，导致拿不到 callback/session。
         if add_phone_gate and (not callback_url) and (not captured):
@@ -1522,14 +1559,17 @@ class RegistrationEngine:
 
         self._log("摸一下 Workspace ID，看看该坐哪桌...")
         workspace_id = str(self._last_validate_otp_workspace_id or "").strip()
+        workspace_source = "otp_validate"
         if workspace_id:
             self._log(f"使用 OTP 返回的 Workspace ID: {workspace_id}")
         if not workspace_id:
             workspace_id = str(self._get_workspace_id() or "").strip()
+            workspace_source = "cookie_or_create_account_fallback"
         if workspace_id:
             result.workspace_id = workspace_id
 
         continue_url = ""
+        continue_url_source = ""
         otp_continue = str(self._last_validate_otp_continue_url or "").strip()
         if otp_continue and self._is_registration_gate_url(otp_continue):
             self._log("OTP 返回 continue_url 指向注册续跑页（about-you/add-phone），保留该地址继续链路", "warning")
@@ -1543,13 +1583,17 @@ class RegistrationEngine:
             continue_url = str(self._select_workspace(workspace_id) or "").strip()
             if not continue_url:
                 self._log("workspace/select 未返回 continue_url，尝试 OAuth authorize 兜底", "warning")
+            else:
+                continue_url_source = "select_workspace"
 
         if not continue_url and otp_continue:
             continue_url = otp_continue
+            continue_url_source = "otp_validate_continue"
             self._log("使用 OTP 返回 continue_url 继续授权链路", "warning")
 
         if not continue_url and cached_continue:
             continue_url = cached_continue
+            continue_url_source = "create_account_cached_continue"
             self._log("使用 create_account 缓存 continue_url 作为兜底", "warning")
 
         if not continue_url:
@@ -1564,6 +1608,7 @@ class RegistrationEngine:
             ).strip()
             if oauth_start_url:
                 continue_url = oauth_start_url
+                continue_url_source = "oauth_authorize_fallback"
                 self._log("使用 OAuth authorize URL 作为兜底 continue_url", "warning")
 
         if not continue_url:
@@ -1572,6 +1617,28 @@ class RegistrationEngine:
 
         self._log("顺着重定向面包屑往前走，别跟丢了...")
         callback_url, _final_url = self._follow_redirects(continue_url)
+        add_phone_gate = self._is_registration_gate_url(_final_url) and (
+            "add-phone" in str(_final_url or "").lower() or "add_phone" in str(_final_url or "").lower()
+        )
+        if add_phone_gate:
+            forensic_pre_add_phone = {
+                "workspace_source": workspace_source,
+                "workspace_id_result": str(result.workspace_id or ""),
+                "workspace_id_last_validate_otp": str(self._last_validate_otp_workspace_id or ""),
+                "workspace_id_create_account_cached": str(self._create_account_workspace_id or ""),
+                "continue_url_source": continue_url_source or "unknown",
+                "continue_url": continue_url,
+                "continue_url_last_validate_otp": otp_continue,
+                "continue_url_create_account_cached": cached_continue,
+                "final_url": _final_url,
+                "callback_url_present": bool(callback_url),
+                "follow_redirects_terminal_status": self._last_follow_redirects_terminal_status_code,
+                "follow_redirects_terminal_url": self._last_follow_redirects_terminal_url,
+            }
+            self._log(
+                "[FORENSIC][pre_add_phone] "
+                f"payload={self._forensic_clip(forensic_pre_add_phone, limit=6000)}"
+            )
         if not callback_url:
             is_lost_continuation = (
                 self._is_auth_login_terminal_url(_final_url)
@@ -2297,6 +2364,17 @@ class RegistrationEngine:
             self._log(f"验证码校验状态: {response.status_code}")
             self._last_otp_validation_status_code = int(response.status_code)
             self._last_otp_validation_outcome = "success" if response.status_code == 200 else "http_non_200"
+
+            # 临时取证：记录 OTP 校验原始响应头与响应体（裁剪），用于线上链路法证分析。
+            forensic_headers = {k: v for k, v in dict(response.headers or {}).items()}
+            forensic_body = str(response.text or "")
+            self._log(
+                "[FORENSIC][otp_validate] "
+                f"status={response.status_code}, "
+                f"headers={self._forensic_clip(forensic_headers, limit=3000)}, "
+                f"body={self._forensic_clip(forensic_body, limit=5000)}"
+            )
+
             if response.status_code == 200:
                 # 记录 OTP 校验返回中的 continue/workspace 提示，供 native 收尾兜底
                 try:
