@@ -2533,6 +2533,7 @@ class RegistrationEngine:
                 return ""
 
             auth_cookie = str(self.session.cookies.get("oai-client-auth-session") or "").strip()
+            self._log(f"[FORENSIC][workspace_lookup] raw cookie oai-client-auth-session: {auth_cookie}")
             if not auth_cookie:
                 self._log("未能获取到授权 Cookie，尝试从 auth-info 里取 workspace", "warning")
 
@@ -2542,41 +2543,63 @@ class RegistrationEngine:
             import urllib.parse as urlparse
 
             try:
-                candidate_payloads: List[str] = []
+                candidate_payloads: List[tuple[str, str]] = []
                 if auth_cookie:
                     segments = auth_cookie.split(".")
                     # 对齐 ABCard：优先 JWT payload 段（第 2 段）
                     if len(segments) >= 2 and segments[1]:
-                        candidate_payloads.append(segments[1])
+                        candidate_payloads.append(("jwt.payload.segment[1]", segments[1]))
                     if segments and segments[0]:
-                        candidate_payloads.append(segments[0])
+                        candidate_payloads.append(("jwt.header.segment[0]", segments[0]))
                     # 极端情况下 cookie 可能直接是 JSON 字符串
-                    candidate_payloads.append(auth_cookie)
+                    candidate_payloads.append(("raw.cookie.string", auth_cookie))
 
-                for payload in candidate_payloads:
+                if candidate_payloads:
+                    self._log(
+                        f"[FORENSIC][workspace_lookup] parser candidates from oai-client-auth-session: "
+                        f"{[label for label, _ in candidate_payloads]}"
+                    )
+                else:
+                    self._log("[FORENSIC][workspace_lookup] no parser candidates from auth-session cookie")
+
+                for parse_label, payload in candidate_payloads:
                     raw = str(payload or "").strip()
                     if not raw:
+                        self._log(f"[FORENSIC][workspace_lookup] skip empty parser candidate: {parse_label}")
                         continue
+                    self._log(f"[FORENSIC][workspace_lookup] trying parser path: {parse_label}")
                     auth_json = None
                     try:
                         pad = "=" * ((4 - (len(raw) % 4)) % 4)
                         decoded = base64.urlsafe_b64decode((raw + pad).encode("ascii"))
                         auth_json = json_module.loads(decoded.decode("utf-8"))
+                        self._log(
+                            f"[FORENSIC][workspace_lookup] parser path {parse_label} succeeded via base64url+json"
+                        )
                     except Exception:
                         try:
                             auth_json = json_module.loads(raw)
+                            self._log(
+                                f"[FORENSIC][workspace_lookup] parser path {parse_label} succeeded via direct json"
+                            )
                         except Exception:
                             auth_json = None
+                            self._log(
+                                f"[FORENSIC][workspace_lookup] parser path {parse_label} failed via base64url+json and direct json",
+                                "warning",
+                            )
 
                     workspace_id = _extract_workspace_id(auth_json)
                     if workspace_id:
-                        self._log(f"Workspace ID: {workspace_id}")
+                        self._log(f"Workspace ID: {workspace_id} (source={parse_label})")
                         return workspace_id
 
                 # 兜底：从 oai-client-auth-info（URL 编码 JSON）提取 workspace
                 auth_info_raw = str(self.session.cookies.get("oai-client-auth-info") or "").strip()
+                self._log(f"[FORENSIC][workspace_lookup] raw cookie oai-client-auth-info: {auth_info_raw}")
                 if auth_info_raw:
                     auth_info_text = auth_info_raw
+                    self._log("[FORENSIC][workspace_lookup] trying parser path: auth-info raw->url-decode(max=2)->json")
                     for _ in range(2):
                         decoded = urlparse.unquote(auth_info_text)
                         if decoded == auth_info_text:
@@ -2584,12 +2607,15 @@ class RegistrationEngine:
                         auth_info_text = decoded
                     try:
                         auth_info_json = json_module.loads(auth_info_text)
+                        self._log("[FORENSIC][workspace_lookup] parser path auth-info succeeded via url-decode+json")
                         workspace_id = _extract_workspace_id(auth_info_json)
                         if workspace_id:
                             self._log(f"Workspace ID (auth-info): {workspace_id}")
                             return workspace_id
                     except Exception as auth_info_err:
                         self._log(f"解析 auth-info Cookie 失败: {auth_info_err}", "warning")
+                else:
+                    self._log("[FORENSIC][workspace_lookup] auth-info cookie empty, skip auth-info parser path")
 
                 # 兜底：复用 create_account 缓存
                 cached_workspace = str(self._create_account_workspace_id or "").strip()
